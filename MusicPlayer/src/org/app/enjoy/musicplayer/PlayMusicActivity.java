@@ -62,6 +62,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.renderscript.Script;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -213,25 +214,7 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 		LogTool.i("onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_play);
-		flag = Contsant.PlayStatus.PLAY;
 		initialize();
-		initData();
-
-		//异步检索其他音频文件
-		new Thread(){
-			@Override
-			public void run() {
-				GetFiles(getSDPath(),arrExtension, true);
-			}
-		}.start();
-		// 设置皮肤背景
-		Setting setting = new Setting(this, false);
-		mLayoutActPlay.setBackgroundResource(setting.getCurrentSkinResId());
-		setup();
-//		mIvMusicCd.startAnimation(rotateAnim);
-//		play();  //移到PlaylistActivity OnItem事件中
-//		ShowLoop();
-//		ShowRandom();
 	}
 
 	private void initialize () {
@@ -485,7 +468,10 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 			}
 		}
 		LogTool.i("postion" + position);
-		DataObservable.getInstance().setData(position);//通知播放列表播放位置变化
+		Bundle bundle = new Bundle();
+		bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
+		bundle.putInt(Contsant.POSITION_KEY, position);
+		DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
 		setup();
 		play();
 
@@ -587,7 +573,10 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 				break;
 		}
 
-		DataObservable.getInstance().setData(position);//通知播放列表播放位置变化
+		Bundle bundle = new Bundle();
+		bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
+		bundle.putInt(Contsant.POSITION_KEY, position);
+		DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
 		setup();
 		play();
 
@@ -638,6 +627,24 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 	public void onResume() {
 		super.onResume();
 		MobclickAgent.onResume(this);
+		flag = Contsant.PlayStatus.PLAY;
+		initData();
+
+		//异步检索其他音频文件
+		new Thread(){
+			@Override
+			public void run() {
+				GetFiles(getSDPath(),arrExtension, true);
+			}
+		}.start();
+		// 设置皮肤背景
+		Setting setting = new Setting(this, false);
+		mLayoutActPlay.setBackgroundResource(setting.getCurrentSkinResId());
+		setup();
+//		mIvMusicCd.startAnimation(rotateAnim);
+//		play();  //移到PlaylistActivity OnItem事件中
+//		ShowLoop();
+//		ShowRandom();
 	}
 	public void onPause() {
 		super.onPause();
@@ -835,7 +842,8 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 	public void onClick(View view) {
 		switch (view.getId()) {
 			case R.id.ib_back:
-				startActivity(new Intent(PlayMusicActivity.this, MusicActivity.class));
+				Intent intent = new Intent(PlayMusicActivity.this, MusicActivity.class);
+				startActivity(intent);
 //				finish();
 				break;
 			case R.id.ib_voice:
@@ -934,6 +942,12 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 			mPositionSeek = 0;
 			pause();
 		}
+	}
+
+	@Override
+	public void startActivity(Intent intent) {
+		super.startActivity(intent);
+		overridePendingTransition(R.anim.base_slide_right_in, R.anim.base_slide_remain);
 	}
 
 	// Press the back button in mobile phone

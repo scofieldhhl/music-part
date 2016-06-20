@@ -14,6 +14,7 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
 import android.text.method.DigitsKeyListener;
 import android.util.Log;
@@ -21,6 +22,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -58,7 +60,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Timer;
 
 import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
 
@@ -131,18 +132,10 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        LogTool.d("onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music);
         initialize();
         LoadMenu();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        LogTool.d("onResume");
-        showPlayInfo();
     }
 
     private void initialize () {
@@ -196,6 +189,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     private void showPlayInfo () {
         if (musicDatas != null && musicDatas.size() > 0) {
             if (currentPosition < musicDatas.size()) {
+                playStatus = Contsant.PlayStatus.PLAY;
                 mMtvTitle.setText(musicDatas.get(currentPosition).title);
                 mIvPlay.setImageResource(R.drawable.icon_play_bottom_pause);
                 String albumId = musicDatas.get(currentPosition).getAlbumId();
@@ -571,20 +565,11 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         }
     }
 
-    private void unRegisterBroadcast(){
-        if(musicReceiver != null){
-            unregisterReceiver(musicReceiver);
-        }
-        if(titleReceiver != null){
-            unregisterReceiver(titleReceiver);
-        }
-    }
-
     @Override
     protected void onDestroy() {
         DataObservable.getInstance().deleteObserver(this);
         super.onDestroy();
-        unRegisterBroadcast();
+        unregisterReceiver(musicReceiver);
     }
 
     public int getCurrentVolume() {
@@ -633,10 +618,6 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         filter.addAction(Contsant.PlayAction.MUSIC_UPDATE);
         filter.addAction(Contsant.PlayAction.MUSIC_STOP);
         registerReceiver(musicReceiver, filter);
-
-        IntentFilter titleFilter = new IntentFilter();
-        filter.addAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
-        registerReceiver(titleReceiver, titleFilter);
 
     }
     /**在后台MusicService里使用handler消息机制，不停的向前台发送广播，广播里面的数据是当前mp播放的时间点，
@@ -691,19 +672,4 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             xfdialog.show();
         }
     }
-
-    protected BroadcastReceiver titleReceiver = new BroadcastReceiver() {
-
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(Contsant.PlayAction.MUSIC_PLAY_SERVICE)) {
-                LogTool.d("MusicService.MUSIC_PLAY_SERVICE");
-                int postionIntent = intent.getIntExtra("position", -1);
-                if(postionIntent != -1){
-                    currentPosition = postionIntent;
-                    mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
-                }
-            }
-        }
-    };
 }
