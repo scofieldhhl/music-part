@@ -330,62 +330,7 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 //		mIbFore.startAnimation(cubeLeftOutBackAnimation);
 //		mIbPlay.startAnimation(cubeRightInBackAnimation);
 	}
-		/**
-         * 顺序播放
-         */
-	/*private void ShowLoop() {
-		LoopBtn=(ImageButton)findViewById(R.id.ib_loop_mode);
-		LoopBtn.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				switch (loop_flag) {
-					case LOOP_NONE:
-						loop_flag = Contsant.LoopMode.LOOP_ONE;
-						LoopBtn.setImageResource(R.drawable.player_btn_player_mode_circleone);
-						toast = Contsant.showMessage(toast, PlayMusicActivity.this, "你选择按顺序来播放");
-						break;
-					case Contsant.LoopMode.LOOP_ALL:
-						loop_flag = LOOP_NONE;
-						LoopBtn.setImageResource(R.drawable.player_btn_player_mode_circlelist);
-						toast = Contsant.showMessage(toast, PlayMusicActivity.this, "你选择全部循环播放");
-						break;
-					case Contsant.LoopMode.LOOP_ONE:
-						loop_flag = Contsant.LoopMode.LOOP_ALL;
-						LoopBtn.setImageResource(R.drawable.player_btn_player_mode_sequence);
-						break;
-
-				}
-
-			}
-		});
-	}*/
-	/**
-	 * 按随机播放
-	 */
-	/*private void ShowRandom() {
-		RandomBtm=(ImageButton)findViewById(R.id.ib_loop_mode);
-		RandomBtm.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				if (random_flag == false) {
-					for (int i = 0; i < musicDatas.size(); i++) {
-						randomIDs[i] = -1;
-					}
-					random_flag = true;
-					RandomBtm.setImageResource(R.drawable.player_btn_player_mode_random);
-					toast = Contsant.showMessage(toast, PlayMusicActivity.this, "你选择的是随机播放");
-				} else {
-					random_flag = false;
-					RandomBtm.setImageResource(R.drawable.player_btn_player_mode_circleone);
-					toast = Contsant.showMessage(toast, PlayMusicActivity.this, "你选择的是按顺序播放");
-				}
-
-			}
-		});
-
-	}*/
+	
 	/**
 	 * 在播放布局里先把播放按钮先删除并用background设置为透明。然后在代码添加按钮
 	 */
@@ -497,43 +442,7 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 	 * 下一首
 	 */
 	public  void nextOne() {
-		/*stop();
-		if (musicDatas.size() == 1 || loop_flag == Contsant.LoopMode.LOOP_ONE) {
-			position = position;
-			Intent intent = new Intent();
-			Bundle bundle = new Bundle();
-			bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-			bundle.putInt(Contsant.POSITION_KEY, position);
-			intent.putExtras(bundle);
-			intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
-			intent.putExtra("length", 1);
-			intent.setPackage(getPackageName());
-			startService(intent);
-			play();
-			return;
-		}
-		if (random_flag == true) {
-			if (randomNum < musicDatas.size() - 1) {
-				randomIDs[randomNum] = position;
-				position = findRandomSound(musicDatas.size());
-				randomNum++;
-
-			} else {
-				randomNum = 0;
-				for (int i = 0; i < musicDatas.size(); i++) {
-					randomIDs[i] = -1;
-				}
-				randomIDs[randomNum] = position;
-				position = findRandomSound(musicDatas.size());
-				randomNum++;
-			}
-		} else {
-			if (position == musicDatas.size() - 1) {
-				position = 0;
-			} else if (position < musicDatas.size() - 1) {
-				position++;
-			}
-		}*/
+		
 		switch (PlayMusicActivity.loop_flag) {
 			case Contsant.LoopMode.LOOP_ORDER://顺序播放
 				//顺序播放运行手动切换下一曲，如果后台播放的最后一曲则停止播放
