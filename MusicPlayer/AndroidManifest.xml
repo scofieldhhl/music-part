@@ -26,6 +26,7 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <android:uses-permission android:name="android.permission.ADD_VOICEMAIL" />
 
     <application
         android:allowBackup="true"
@@ -58,6 +59,12 @@
             android:theme="@android:style/Theme.Light.NoTitleBar"></activity>
         <activity
             android:name=".PlayMusicActivity"
+            android:launchMode="singleInstance"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Light.NoTitleBar" >
+        </activity>
+        <activity
+            android:name=".MusicPlayActivity"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Light.NoTitleBar" >

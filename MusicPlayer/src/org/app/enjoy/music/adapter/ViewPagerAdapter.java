@@ -37,7 +37,10 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public CharSequence getPageTitle(int position) {
-        return titles[position];
+        if (position < titles.length) {
+            return titles[position];
+        }
+        return "";
     }
 
     @Override
@@ -47,6 +50,6 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return titles.length;
+        return frags.size();
     }
 }

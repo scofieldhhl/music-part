@@ -19,7 +19,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Scroller;
 
-import org.app.enjoy.musicplayer.MusicListActivity;
 import org.app.enjoy.musicplayer.R;
 
 /**
@@ -265,13 +264,13 @@ public class SwipeBackLayout extends FrameLayout {
 			mContentView.scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
 			postInvalidate();
 
-			if (mScroller.isFinished() && isFinish) {
+			/*if (mScroller.isFinished() && isFinish) {
 				if (mActivity instanceof MusicListActivity) {
 					((MusicListActivity) mActivity).playMusic(((MusicListActivity) mActivity).getCurrentPosition(), 0L);
 				} else {
 					mActivity.finish();
 				}
-			}
+			}*/
 		}
 	}
 

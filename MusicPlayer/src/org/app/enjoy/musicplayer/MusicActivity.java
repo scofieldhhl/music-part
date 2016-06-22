@@ -91,7 +91,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     private int maxVolume;// 最大音量
     private int currentVolume;// 当前音量
     private int playStatus;
-    private String[] titles = { "All Songs", "Artist","Album", "PlayLists","Search"};
+    private String[] titles = { "All Songs", "Artist","Album", "PlayLists"};
     private List<MusicData> musicDatas = new ArrayList<>();
     private int currentPosition;
     private CategoryPopWindow categoryPopWindow;
@@ -136,6 +136,12 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         setContentView(R.layout.activity_music);
         initialize();
         LoadMenu();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
     }
 
     private void initialize () {
@@ -222,14 +228,14 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             @Override
             public void onClickListener(int position, View view) {
                 xmenu.cancel();
-                if (position == 0) {
+                /*if (position == 0) {
                     Intent it = new Intent(MusicActivity.this, SkinSettingActivity.class);
                     startActivityForResult(it, 2);
 
                 } else if (position == 1) {
                     exit();
 
-                }
+                }*/
             }
         });
         List<int[]> data2 = new ArrayList<int[]>();
@@ -262,8 +268,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             @Override
             public void onClickListener(int position, View view) {
                 xmenu.cancel();
-                Intent intent = new Intent(MusicActivity.this, AboutActivity.class);
-                startActivity(intent);
+                /*Intent intent = new Intent(MusicActivity.this, AboutActivity.class);
+                startActivity(intent);*/
 
             }
         });
@@ -342,7 +348,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                     }
                     //如果当前是播放列表MusicListFragment或者搜索SearchMusicFragment则通知播放位置发生改变同步更新UI
                     if (viewPagerAdapter != null) {
-                        if (viewPager.getCurrentItem() == 0 || viewPager.getCurrentItem() == 4) {
+                        if (viewPager.getCurrentItem() == 0 || viewPager.getCurrentItem() == 3 || viewPager.getCurrentItem() == 4) {
                             Bundle bundle = new Bundle();
                             bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
                             bundle.putInt(Contsant.POSITION_KEY, currentPosition);
@@ -470,7 +476,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 break;
             case R.id.l_play_bottom:
                 LogTool.d("l_play_bottom:");
-                startActivity(new Intent(MusicActivity.this, PlayMusicActivity.class));
+                startActivity(new Intent(MusicActivity.this, MusicPlayActivity.class));
                 break;
         }
     }
@@ -511,7 +517,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+        /*if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             if(popupWindow != null && popupWindow.isShowing()){
                 popupWindow.dismiss();
             }else{
@@ -528,7 +534,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             return false;
         }else if(keyCode == KeyEvent.KEYCODE_BACK && popupWindow.isShowing()){
             popupWindow.dismiss();
-        }
+        }*/
+        finish();
         return false;
     }
 
@@ -658,7 +665,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     public void playMusic(int position, long seekPosition) {
         if (musicDatas.size() > 0) {
 
-            Intent intent = new Intent(MusicActivity.this,PlayMusicActivity.class);
+            Intent intent = new Intent(MusicActivity.this,MusicPlayActivity.class);
             Bundle bundle = new Bundle();
             bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
             bundle.putInt(Contsant.POSITION_KEY, position);
@@ -671,5 +678,12 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                     setPositiveButton(getResources().getString(R.string.confrim), null).create();
             xfdialog.show();
         }
+    }
+
+    public int getCurrentPage () {
+        if (viewPager != null) {
+            return viewPager.getCurrentItem();
+        }
+        return 0;
     }
 }

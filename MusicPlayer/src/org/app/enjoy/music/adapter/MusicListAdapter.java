@@ -12,25 +12,17 @@ import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.util.AlbumImgUtil;
 import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.MovingTextView;
-import org.app.enjoy.musicplayer.MusicListActivity;
 import org.app.enjoy.musicplayer.R;
-import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class MusicListAdapter extends BaseAdapter {

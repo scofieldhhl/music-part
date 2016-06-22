@@ -45,6 +45,8 @@ public class Contsant {
 		public static final int SEARCH_ARTIST_COMPLETE =       0x107;
 		public static final int SHOW_BOTTOM_PLAY_INFO =       0x108;
 		public static final int PLAY_LRC_SWITCH =       0x109;
+		public static final int UPDATE_ARTIST_LIST =       0x110;
+		public static final int UPDATE_ALBUM_LIST =       0x111;
 
 	}
 

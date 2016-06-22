@@ -19,7 +19,6 @@ import java.util.TreeMap;
 
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
-import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.FastBlur;
 import org.app.enjoy.music.view.FlingGalleryView;
@@ -62,15 +61,12 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.renderscript.Script;
 import android.text.TextUtils;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
-import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
@@ -80,8 +76,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.umeng.analytics.MobclickAgent;
 
 import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
@@ -218,9 +212,6 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 	}
 
 	private void initialize () {
-		swipeBackLayout = (SwipeBackLayout) LayoutInflater.from(this).inflate(R.layout.base, null);
-		swipeBackLayout.attachToActivity(this);
-		swipeBackLayout.setScrollMode(SwipeBackLayout.RIGHT_MODE);
 		mLayoutActPlay=(LinearLayout) findViewById(R.id.l_activity_play);
 		mIbBack = (ImageButton)findViewById(R.id.ib_back);
 		mMTvMusicName = (MovingTextView) findViewById(R.id.mtv_music_name);

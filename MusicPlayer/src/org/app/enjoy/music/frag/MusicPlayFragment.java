@@ -22,6 +22,8 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,6 +39,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.data.MusicData;
@@ -105,7 +109,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private ImageButton LoopBtn = null;// 循环
 	private ImageButton RandomBtm = null;// 随机
 	private ImageButton mIbBack,mIbBalance;
-	private CircleImageView mIvMusicCd;
+	private ImageView mIvMusicCd;
 	private static final int STATE_PLAY = 1;// 播放状态设为1
 	private static final int STATE_PAUSE = 2;// 播放状态设为2
 
@@ -126,7 +130,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private boolean isSilence = false;//是否静音
 
 	private List<MusicData> musicDatas;
-	private SwipeBackLayout swipeBackLayout;
 
     private CubeLeftOutAnimation cubeLeftOutAnimation;
     private CubeRightInAnimation cubeRightInAnimation;
@@ -207,7 +210,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_play,container, false);
-
         flag = Contsant.PlayStatus.PLAY;
         initialize(view);
         return view;
@@ -215,9 +217,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
     private void initialize (View view) {
 		DataObservable.getInstance().addObserver(this);
-		swipeBackLayout = (SwipeBackLayout) LayoutInflater.from(getActivity()).inflate(R.layout.base, null);
-		swipeBackLayout.attachToActivity(getActivity());
-		swipeBackLayout.setScrollMode(SwipeBackLayout.RIGHT_MODE);
         mLayoutActPlay=(LinearLayout) view.findViewById(R.id.l_activity_play);
         mIbBack = (ImageButton)view.findViewById(R.id.ib_back);
         mMTvMusicName = (MovingTextView) view.findViewById(R.id.mtv_music_name);
@@ -231,7 +230,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         mIbLoopMode=(ImageButton)view.findViewById(R.id.ib_loop_mode);
 		mIbBalance = (ImageButton)view.findViewById(R.id.ib_balance);
         mIbShare = (ImageButton) view.findViewById(R.id.ib_share);
-        mIvMusicCd = (CircleImageView)view.findViewById(R.id.iv_music_cd);
+        mIvMusicCd = (ImageView)view.findViewById(R.id.iv_music_cd);
         mIbVoice = (ImageButton)view.findViewById(R.id.ib_voice);
 		mTvCurrentTime = (TextView) view.findViewById(R.id.tv_current_time);
 		mTvDurationTime = (TextView) view.findViewById(R.id.tv_duration_time);
@@ -292,6 +291,14 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			}
 		});
 		mIvBgLrc = (ImageView) view.findViewById(R.id.iv_bg_lrc);
+
+        //异步检索其他音频文件
+        new Thread(){
+            @Override
+            public void run() {
+                GetFiles(getSDPath(),arrExtension, true);
+            }
+        }.start();
     }
 
     @Override
@@ -550,6 +557,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public void onResume() {
         super.onResume();
         MobclickAgent.onResume(getActivity());
+        ReadSDLrc();
     }
     public void onPause() {
         super.onPause();
@@ -631,9 +639,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 				currentTime = intent.getExtras().getLong("currentTime");// 获得当前播放位置
 				duration = intent.getExtras().getLong("duration");
 				if(musicDatas != null){
-					LogTool.i("musicReceiver position:"+position);
 					int index = intent.getExtras().getInt("index");
-					LogTool.i("musicReceiver index:"+index);
 					mSimpleRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
 					mBitRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
 				}
@@ -871,13 +877,17 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 						MediaStore.Audio.Media.ALBUM_ID }, "_id=?",new String[] { musicDatas.get(position).getId() + "" }, null);
 		cursor.moveToFirst();// 将游标移至第一位
 		if(cursor.getCount() > 0){
-			Bitmap bitmap = getArtwork(getActivity(), musicDatas.get(position).getId(), cursor.getInt(5), true);
+			final Bitmap bitmap = getArtwork(getActivity(), musicDatas.get(position).getId(), cursor.getInt(5), true);
 			/**切换播放时候专辑图片出现透明效果**/
 			Animation albumanim = AnimationUtils.loadAnimation(getActivity(), R.anim.album_replace);
 			/**开始播放动画效果**/
 //			mIvMusicCd.startAnimation(albumanim);
-			mIvMusicCd.setImageBitmap(bitmap);
-			mIvBgLrc.setImageBitmap(getArtwork(getActivity(), musicDatas.get(position).getId(), cursor.getInt(5), true));
+            RoundedBitmapDrawable circularBitmapDrawable =
+                    RoundedBitmapDrawableFactory.create(mContext.getResources(), bitmap);
+            circularBitmapDrawable.setCircular(true);
+            mIvMusicCd.setImageDrawable(circularBitmapDrawable);
+//            mIvMusicCd.setImageBitmap(bitmap);
+			mIvBgLrc.setImageBitmap(bitmap);
 			/**为专辑图片添加倒影,这样有种立体感的效果**/
 //		iv_player_ablum_reflection.setImageBitmap(ImageUtil.createReflectionBitmapForSingle(bm));
 			/**游标定位到DISPLAY_NAME**/
@@ -899,9 +909,9 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			mIvMusicCd.setBackgroundResource(R.drawable.icon_music_cd);
 //			mIvBgLrc.setImageBitmap(null);
 		}
-	}
+    }
 
-	/**
+    /**
 	 * 以下是歌曲放的时候显示专辑图片。和列表不同,播放时图片要大。所以cam那个方法写合适的图片吧
 	 */
 	public static Bitmap getArtwork(Context context, long song_id, long album_id, boolean allowdefault) {

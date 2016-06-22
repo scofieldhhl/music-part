@@ -53,6 +53,7 @@ import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
 public class MusicListFragment extends Fragment implements AdapterView.OnItemClickListener,AdapterView.OnItemLongClickListener,Observer {
 
     private String TAG = "MusicListFragment";
+    private View view;
     private ImageButton mIbRight;
     /*** 音乐列表 **/
     private ListView mLvSongs;
@@ -111,16 +112,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.music_list,container, false);
-        initialize(view);
-        initData();
-        //异步检索其他音频文件
-        new Thread(){
-            @Override
-            public void run() {
-                GetFiles(getSDPath(),arrExtension, true);
-            }
-        }.start();
+        view = inflater.inflate(R.layout.music_list,container, false);
         return view;
     }
 
@@ -146,12 +138,23 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private void initData () {
         List<MusicData> musicList = MusicUtil.getAllSongs(getContext());
         musicDatas.addAll(musicList);
-        musicListAdapter.notifyDataSetChanged();
+//        musicListAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+
+        initialize(view);
+        //异步检索其他音频文件
+        new Thread(){
+            @Override
+            public void run() {
+                initData();
+                GetFiles(getSDPath(),arrExtension, true);
+            }
+        }.start();
+
         // 设置皮肤背景
         Setting setting = new Setting(getActivity(), false);
         mLvSongs.setBackgroundResource(setting.getCurrentSkinResId());//这里我只设置listview的皮肤而已。
@@ -249,8 +252,10 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                 isMusicRemove = true;
             } else if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
                 if(position < musicDatas.size()) {
-                    currentPosition = position;
-                    mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                    if (((MusicActivity) getActivity()).getCurrentPage() == 0) {
+                        currentPosition = position;
+                        mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                    }
                 }
             }
         }
