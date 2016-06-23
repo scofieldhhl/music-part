@@ -86,7 +86,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                         if (musicListAdapter != null) {
                             musicListAdapter.setDatas(musicDatas);
                             musicListAdapter.setCurrentPosition(currentPosition);
-                            musicListAdapter.notifyDataSetChanged();
                         }
                     } else {
                         final XfDialog xfdialog = new XfDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.tip)).
@@ -98,6 +97,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                     break;
                 case Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION:
                     if (musicListAdapter != null){
+                        musicListAdapter.setDatas(musicDatas);
                         musicListAdapter.notifyDataSetChanged();
                     }
                     break;
@@ -138,12 +138,16 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private void initData () {
         List<MusicData> musicList = MusicUtil.getAllSongs(getContext());
         musicDatas.addAll(musicList);
-//        musicListAdapter.notifyDataSetChanged();
+        mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+
+        if (musicDatas != null) {
+            musicDatas.clear();
+        }
 
         initialize(view);
         //异步检索其他音频文件

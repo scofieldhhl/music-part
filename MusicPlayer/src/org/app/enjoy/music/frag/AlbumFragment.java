@@ -13,12 +13,16 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.umeng.analytics.MobclickAgent;
+
 import org.app.enjoy.music.adapter.AlbumAdapter;
 import org.app.enjoy.music.adapter.ArtistAdapter;
 import org.app.enjoy.music.data.AlbumData;
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.db.DbDao;
+import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
+import org.app.enjoy.music.tool.Setting;
 import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
@@ -47,6 +51,7 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
             switch (msg.what) {
                 case Contsant.Msg.UPDATE_ALBUM_LIST:
                     if (albumAdapter != null) {
+                        albumAdapter.setDatas(albumList);
                         albumAdapter.notifyDataSetChanged();
                     }
                     break;
@@ -65,6 +70,13 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         super.onResume();
         initialize(view);
         initData();
+
+        // 设置皮肤背景
+        Setting setting = new Setting(getActivity(), false);
+        mLvAlbum.setBackgroundResource(setting.getCurrentSkinResId());//这里我只设置listview的皮肤而已。
+        MobclickAgent.onResume(getActivity());
+        Intent intentServer = new Intent(getActivity(), MusicService.class);
+        getActivity().startService(intentServer);
     }
 
     private void initialize (View view) {
@@ -97,8 +109,6 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
                 mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_ALBUM_LIST);
             }
         }.start();
-
-        albumAdapter.notifyDataSetChanged();
     }
 
     /**

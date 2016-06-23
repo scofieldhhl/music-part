@@ -345,7 +345,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 //		mIbFore.startAnimation(cubeLeftOutBackAnimation);
 //		mIbPlay.startAnimation(cubeRightInBackAnimation);
 	}
-	
+
 	/**
 	 * 在播放布局里先把播放按钮先删除并用background设置为透明。然后在代码添加按钮
 	 */
