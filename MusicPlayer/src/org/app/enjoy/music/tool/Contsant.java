@@ -24,7 +24,7 @@ import android.widget.Toast;
 
 /**
  * 常量类
- * @author 涙星
+ * @author
  */
 public class Contsant {
 	public static final String MUSIC_LIST_KEY = "MUSIC_LIST_KEY";
@@ -35,6 +35,8 @@ public class Contsant {
 	public static final String ACTION_KEY = "ACTION_KEY";
 	public static final String DSD_APE = ".ape";
 	public static final String DSD_CUE = ".cue";
+	public static final String MA_DATA = "madata";
+	public static final String CURRENT_FRAG = "CURRENT_FRAG";
 	public static class Msg {
 		public static final int UPDATE_PLAY_LIST =                 0x101;
 		public static final int UPDATE_PLAY_LIST_EXTENSION =       0x102;
@@ -48,6 +50,14 @@ public class Contsant {
 		public static final int UPDATE_ARTIST_LIST =       0x110;
 		public static final int UPDATE_ALBUM_LIST =       0x111;
 
+	}
+
+	public static class Frag {
+		public static final int MUSIC_LIST_FRAG = 1;
+		public static final int ARTIST_FRAG = 2;
+		public static final int ALBUM_FRAG = 3;
+		public static final int DIY_FRAG = 4;
+		public static final int SEARCH_MUSIC_FRAG = 5;
 	}
 
 	public static class Action {

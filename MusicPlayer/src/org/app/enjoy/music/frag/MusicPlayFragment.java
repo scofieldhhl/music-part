@@ -106,8 +106,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private int position;// 定义一个位置，用于定位用户点击列表曲首
     private long currentTime;// 当前播放位置
     private long duration;// 总时间
-	private ImageButton LoopBtn = null;// 循环
-	private ImageButton RandomBtm = null;// 随机
 	private ImageButton mIbBack,mIbBalance;
 	private ImageView mIvMusicCd;
 	private static final int STATE_PLAY = 1;// 播放状态设为1
@@ -305,6 +303,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         registerMusicReceiver();
+        //启动service
+        Intent intent = new Intent();
+        intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
+        intent.setPackage(getActivity().getPackageName());
+        getActivity().startService(intent);
     }
 
     private static MusicPlayFragment mInstance;
@@ -316,18 +319,16 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     }
 
     private void initData (Bundle bundle) {
-//        Intent intent = this.getIntent();//接收来自列表的数据
-//        Bundle bundle = intent.getExtras();
         musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
         position = bundle.getInt(Contsant.POSITION_KEY);
         if (musicDatas != null) {
             randomIDs = new int[musicDatas.size()];
         }
-			if(musicDatas != null && musicDatas.size() > 0){
-				openAnim();
-			}else{
-				closeAnim();
-			}
+        if(musicDatas != null && musicDatas.size() > 0){
+            openAnim();
+        }else{
+            closeAnim();
+        }
 	}
 
     private void openAnim () {
@@ -570,6 +571,14 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         DataObservable.getInstance().deleteObserver(this);
         super.onDestroy();
         getActivity().unregisterReceiver(musicReceiver);
+        if(mTask != null){
+            mTask.cancel();
+            mTask = null;
+        }
+        if(mTimer != null){
+            mTimer.cancel();
+            mTimer = null;
+        }
     }
 
     /**

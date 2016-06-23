@@ -1,16 +1,13 @@
 package org.app.enjoy.music.frag;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,13 +24,12 @@ import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
-import org.app.enjoy.music.tool.CueUtil;
 import org.app.enjoy.music.tool.LogTool;
 import org.app.enjoy.music.tool.Menu;
 import org.app.enjoy.music.tool.Setting;
 import org.app.enjoy.music.tool.XfDialog;
 import org.app.enjoy.music.util.MusicUtil;
-import org.app.enjoy.music.util.SearchMusicTask;
+import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.PlayMusicActivity;
 import org.app.enjoy.musicplayer.R;
@@ -44,8 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-
-import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
 
 /**
  * Created by Administrator on 2016/6/2.
@@ -211,6 +205,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+        SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_LIST_FRAG);
         playMusic(position, 0);
         currentPosition = position;
         currentMusicId = musicDatas.get(position).id;

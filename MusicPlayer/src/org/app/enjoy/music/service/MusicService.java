@@ -28,6 +28,7 @@ import org.app.enjoy.music.frag.MusicPlayFragment;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.LogTool;
+import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
 
@@ -62,7 +63,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private int position;// 位置
 	public static Notification notification;// 通知栏显示当前播放音乐
 	public static NotificationManager nm;
-	//	private String mUrl= "/storage/sdcard0/Download/李克勤 - 月半小夜曲.ape";
 	private List<MusicData> musicDatas;
 	private String mPath = "";
 	private long mSeekPosition = 0L;
@@ -70,10 +70,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private int prePosition = 0;
 	private String mSampleRate;
 	private String mBitRate;
+	private Context mContext;
 	@Override
 	public void onCreate() {
 		LogTool.i("onCreate");
 		super.onCreate();
+		mContext = this;
 		release(false);
 		try {
 			IjkMediaPlayer ijkMediaPlayer = null;
@@ -199,6 +201,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(nm != null){
 			nm.cancelAll();// 清除掉通知栏的信息
 		}
+
 		if (mp != null) {
 			mp.stop();// 停止播放
 			mp = null;
@@ -225,17 +228,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		LogTool.i("onStartCommand");
-		return super.onStartCommand(intent, flags, startId);
-	}
-
-	@Override
-	public void onStart(Intent intent, int startId) {
-		LogTool.i("onStart");
-		super.onStart(intent, startId);
-		if(intent == null){
-			LogTool.i("intent == null");
-			return;
-		}
 		Bundle bundle = intent.getExtras();
 		if (bundle != null) {
 			musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
@@ -243,84 +235,99 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			mSeekPosition = bundle.getLong(Contsant.SEEK_POSITION);
 			LogTool.i("position"+position +"mSeekPosition"+ mSeekPosition);
 //			mPath = bundle.getString(Contsant.POSITION_PATH);
-		} else {
-			Log.e("MusicService", "------------------------bundle == null----------------------------------");
-			return;
-		}
-		// 发送的长度
-		int length = intent.getIntExtra("length", -1);
-		if (position >= musicDatas.size()) {
-			return;
-		}
-		if (musicDatas.get(position).path != null) {
-			LogTool.i("mPath" + mPath);
-			LogTool.i(musicDatas.get(position).path);
-			if (!mPath.equalsIgnoreCase(musicDatas.get(position).path) || (musicDatas.get(position).seekPostion != 0 && position != prePosition)) {
-				mPath = musicDatas.get(position).path;
-				try {
-					mp.reset();
-					mp.setDataSource(mPath);
-					isSetDataSource = true;
-					prePosition = position;
-					LogTool.i("setDataSource" + mPath);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}else if (length == 1) {
-				try {
+
+			// 发送的长度
+			int length = intent.getIntExtra("length", -1);
+			if (position >= musicDatas.size()) {
+				return 0;
+			}
+			if (musicDatas.get(position).path != null) {
+				LogTool.i("mPath" + mPath);
+				LogTool.i(musicDatas.get(position).path);
+				if (!mPath.equalsIgnoreCase(musicDatas.get(position).path) || (musicDatas.get(position).seekPostion != 0 && position != prePosition)) {
 					mPath = musicDatas.get(position).path;
-					mp.reset();
-					mp.setDataSource(mPath);
-					isSetDataSource = true;
-					prePosition = position;
-				} catch (Exception e) {
-					e.printStackTrace();
+					try {
+						mp.reset();
+						mp.setDataSource(mPath);
+						isSetDataSource = true;
+						prePosition = position;
+						LogTool.i("setDataSource" + mPath);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}else if (length == 1) {
+					try {
+						mPath = musicDatas.get(position).path;
+						mp.reset();
+						mp.setDataSource(mPath);
+						isSetDataSource = true;
+						prePosition = position;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
-		}
-		setup();
-		init();
-		if (position != -1) {
-			Intent intent1 = new Intent();
-			intent1.setAction(Contsant.PlayAction.MUSIC_LIST);
-			intent1.putExtra("position", position);
-			sendBroadcast(intent1);
-			Intent intent2 = new Intent("com.app.musictitle");
-			intent2.putExtra("title", musicDatas.get(position).title);
-			sendBroadcast(intent2);
-			Intent playIntent = new Intent(Contsant.PlayAction.MUSIC_PLAY);
-			sendBroadcast(playIntent);
-		}
-		/**
-		 * 初始化数据
-		 */
-		int op = intent.getIntExtra("op", -1);
-		LogTool.i("op" + op);
-		if (op != -1) {
-			switch (op) {
-				case Contsant.PlayStatus.PLAY:// 播放
-					if (!mp.isPlaying()) {
-						play();
-					}
+			setup();
+			init();
+			if (position != -1) {
+				Intent intent1 = new Intent();
+				intent1.setAction(Contsant.PlayAction.MUSIC_LIST);
+				intent1.putExtra("position", position);
+				sendBroadcast(intent1);
+				Intent intent2 = new Intent("com.app.musictitle");
+				intent2.putExtra("title", musicDatas.get(position).title);
+				sendBroadcast(intent2);
+				Intent playIntent = new Intent(Contsant.PlayAction.MUSIC_PLAY);
+				sendBroadcast(playIntent);
+			}
+			/**
+			 * 初始化数据
+			 */
+			int op = intent.getIntExtra("op", -1);
+			LogTool.i("op" + op);
+			if (op != -1) {
+				switch (op) {
+					case Contsant.PlayStatus.PLAY:// 播放
+						if (!mp.isPlaying()) {
+							play();
+						}
+						break;
+					case Contsant.PlayStatus.PAUSE:// 暂停
+						isSetDataSource = false;
+						if (mp.isPlaying()) {
+							pause();
+						}
+						break;
+					case Contsant.PlayStatus.STOP:// 停止
+						isSetDataSource = false;
+						stop();
+						break;
+					case Contsant.PlayStatus.PROGRESS_CHANGE:// 进度条改变
+						isSetDataSource = false;
+						currentTime = intent.getExtras().getLong("progress");
+						mp.seekTo(currentTime);
+						break;
+				}
+			}
+			ShowNotifcation();
+		} else {
+			LogTool.e("------------------------bundle == null----------------------------------");
+			int ma_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
+			switch (ma_data){
+				case Contsant.Frag.MUSIC_LIST_FRAG:
 					break;
-				case Contsant.PlayStatus.PAUSE:// 暂停
-					isSetDataSource = false;
-					if (mp.isPlaying()) {
-						pause();
-					}
+				case Contsant.Frag.ARTIST_FRAG:
 					break;
-				case Contsant.PlayStatus.STOP:// 停止
-					isSetDataSource = false;
-					stop();
+				case Contsant.Frag.ALBUM_FRAG:
 					break;
-				case Contsant.PlayStatus.PROGRESS_CHANGE:// 进度条改变
-					isSetDataSource = false;
-					currentTime = intent.getExtras().getLong("progress");
-					mp.seekTo(currentTime);
+				case Contsant.Frag.DIY_FRAG:
+					break;
+				default:
 					break;
 			}
 		}
-		ShowNotifcation();
+
+		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
@@ -398,7 +405,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 									intent.putExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI, mBitRate);
 									sendBroadcast(intent);
 								}
-							handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
+							if(handler != null){
+								handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
+							}
 							break;
 						case Contsant.Action.PLAY_PAUSE_MUSIC:
 							LogTool.i("PLAY_PAUSE_MUSIC"+msg.arg1);

@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,15 +14,13 @@ import android.widget.ListView;
 import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.adapter.AlbumAdapter;
-import org.app.enjoy.music.adapter.ArtistAdapter;
 import org.app.enjoy.music.data.AlbumData;
 import org.app.enjoy.music.data.MusicData;
-import org.app.enjoy.music.db.DbDao;
 import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.Setting;
 import org.app.enjoy.music.util.MusicUtil;
-import org.app.enjoy.musicplayer.MusicActivity;
+import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.musicplayer.R;
 
 import java.io.Serializable;
@@ -129,6 +125,7 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+        SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, Contsant.Frag.ALBUM_FRAG);
         List<MusicData> musicDatas = MusicUtil.getSongByAlbum(getContext(), albumList.get(position).getAlbumId());
         if (musicDatas != null && musicDatas.size() > 0) {
             if (albumAdapter != null) {

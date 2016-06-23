@@ -352,7 +352,7 @@ public class MusicPlayActivity extends BaseActivity implements View.OnClickListe
                     //暂时这么处理，滑动到播放界面时如果当前没有播放其他歌曲则播放第一个歌曲，
                     // 后续增加播放记录后改进从上次播放位置开始播放
                     if (currentPosition == 0) {
-                        playMusic(currentPosition,0);
+                        /*playMusic(currentPosition,0);*/
 
                         Bundle bundle = new Bundle();
                         bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
@@ -412,13 +412,10 @@ public class MusicPlayActivity extends BaseActivity implements View.OnClickListe
         return musicDatas;
     }
 
-    public int getCurrentVolume() {
-        return currentVolume;
-    }
     /**
      * 根据Position播放音乐
      */
-    public void playMusic(int position, long seekPosition) {
+    /*public void playMusic(int position, long seekPosition) {
         if (musicDatas != null && musicDatas.size() > 0) {
             play(position);
 
@@ -450,6 +447,6 @@ public class MusicPlayActivity extends BaseActivity implements View.OnClickListe
         intent.setPackage(getPackageName());
         startService(intent);
 
-    }
+    }*/
 
 }
