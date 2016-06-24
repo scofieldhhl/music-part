@@ -71,6 +71,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private String mSampleRate;
 	private String mBitRate;
 	private Context mContext;
+	private String mMusicName, mMusicFormat;
 	@Override
 	public void onCreate() {
 		LogTool.i("onCreate");
@@ -140,14 +141,23 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		showMediaInfo();
 		final Intent intent = new Intent();
 		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
+		if(musicDatas != null && musicDatas.size() > position){
+			mMusicName = musicDatas.get(position).title;
+			mMusicFormat = musicDatas.get(position).getPath().substring(musicDatas.get(position).getPath().length() - 3).toUpperCase();
+		}
 		duration = mp.getDuration();
+		setBroadcastInfo(intent);
+	}
+
+	private void setBroadcastInfo(Intent intent){
+		intent.putExtra("format", mMusicFormat);
+		intent.putExtra("name", mMusicName);
 		intent.putExtra("duration", duration);
 		intent.putExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI, mSampleRate);
 		intent.putExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI, mBitRate);
 		LogTool.i("initAudioInfo" + mSampleRate + mBitRate);
 		sendBroadcast(intent);
 	}
-
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
 		public void onCompletion(IMediaPlayer mp) {
 			DebugLog.d(TAG, "onCompletion");
@@ -201,7 +211,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(nm != null){
 			nm.cancelAll();// 清除掉通知栏的信息
 		}
-
+		SharePreferencesUtil.putLong(mContext, Contsant.INFO_LAST_PLAY_DURATION, duration);
+		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_BITRATE, mBitRate);
+		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_SAMPLERATE, mSampleRate);
+		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_NAME, mMusicName);
 		if (mp != null) {
 			mp.stop();// 停止播放
 			mp = null;
@@ -388,22 +401,16 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 						case Contsant.PlayStatus.STATE_PREPARED:
 							intent.setAction(Contsant.PlayAction.MUSIC_PREPARED);
 							currentTime =  mp.getCurrentPosition();
-							duration = mp.getDuration();
 							intent.putExtra("currentTime", currentTime);
-							intent.putExtra("duration", duration);
-							sendBroadcast(intent);
+							setBroadcastInfo(intent);
 							handler.sendEmptyMessage(Contsant.PlayStatus.STATE_INFO);
 							break;
 						case Contsant.PlayStatus.STATE_INFO:
 								if(mp != null){
 									intent.setAction(Contsant.PlayAction.MUSIC_CURRENT);
 									currentTime =  mp.getCurrentPosition();
-									duration = mp.getDuration();
 									intent.putExtra("currentTime", currentTime);
-									intent.putExtra("duration", duration);
-									intent.putExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI, mSampleRate);
-									intent.putExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI, mBitRate);
-									sendBroadcast(intent);
+									setBroadcastInfo(intent);
 								}
 							if(handler != null){
 								handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);

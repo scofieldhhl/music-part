@@ -142,7 +142,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private TimerTask mTask;
 	private ImageView mIvBgLrc;
 	private ArrayList<String> mLrcPathlist = new ArrayList<>();
-	private String mSimpleRate = "", mBitRate = "";
+	private String mSimpleRate = "", mBitRate = "", mMusicFormat;
 
     private Handler mHandler = new Handler(){
         @Override
@@ -319,6 +319,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     }
 
     private void initData (Bundle bundle) {
+        mCsbProgress.setProgress(0);
         musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
         position = bundle.getInt(Contsant.POSITION_KEY);
         if (musicDatas != null) {
@@ -431,7 +432,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                 position--;
             }
         }
-		LogTool.i("postion" + position);
+        LogTool.i("postion" + position);
         Bundle bundle = new Bundle();
         bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
         bundle.putInt(Contsant.POSITION_KEY, position);
@@ -452,7 +453,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         bundle.putInt(Contsant.POSITION_KEY, position);
         bundle.putLong(Contsant.SEEK_POSITION, mSeekPosition);
         intent.putExtras(bundle);
-        intent.putExtra("op",  Contsant.PlayStatus.PROGRESS_CHANGE);
+        intent.putExtra("op", Contsant.PlayStatus.PROGRESS_CHANGE);
         intent.putExtra("progress", progress);
         intent.setPackage(getActivity().getPackageName());
         getActivity().startService(intent);
@@ -585,41 +586,15 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
      * 初始化
      */
     private void setup() {
-        loadclip();
 		registerMusicReceiver();
 		ReadSDLrc();
     }
-    /**
-     * 在顶部显示歌手，歌名。这两个是通过服务那边接收过来的
-     */
-    private void loadclip() {
-        mCsbProgress.setProgress(0);
-        /**设置歌曲名**/
-		if(musicDatas != null && musicDatas.size() > 0){
-        if (musicDatas.get(position).title.length() > 15)
-            mMTvMusicName.setText(musicDatas.get(position).title.substring(0, 12) + "...");// 设置歌曲名
-        else
-            mMTvMusicName.setText(musicDatas.get(position).title);
-        mMusicName = String.valueOf(mMTvMusicName.getText());
-        /**设置艺术家名**/
-        String artist = musicDatas.get(position).artist;
-        Intent intent = new Intent();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-        bundle.putInt(Contsant.POSITION_KEY, position);
-			intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);// 给将这个action发送服务
-        intent.setPackage(getActivity().getPackageName());
-        getActivity().startService(intent);
-    }
-	}
 
     public void showAudioInfo (){
-		if(musicDatas != null && musicDatas.size() > 0){
-			String format = musicDatas.get(position).getPath().substring(musicDatas.get(position).getPath().length() - 3).toUpperCase();
-			mTvFormat.setText(format);
-			mTvSimapleRate.setText(mBitRate);
-			mTvBitRate.setText(mBitRate);
-		}
+        mMTvMusicName.setText(mMusicName);
+        mTvFormat.setText(mMusicFormat);
+        mTvSimapleRate.setText(mBitRate);
+        mTvBitRate.setText(mBitRate);
 	}
     /**
      * 初始化注册广播
@@ -647,29 +622,24 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			}else if (action.equals(Contsant.PlayAction.MUSIC_CURRENT)) {
 				currentTime = intent.getExtras().getLong("currentTime");// 获得当前播放位置
 				duration = intent.getExtras().getLong("duration");
-				if(musicDatas != null){
+				/*if(musicDatas != null){
 					int index = intent.getExtras().getInt("index");
 					mSimpleRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
 					mBitRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
-				}
+				}*/
                 mHandler.sendEmptyMessage(Contsant.Action.CURRENT_TIME_MUSIC);
             } else if (action.equals(Contsant.PlayAction.MUSIC_DURATION)) {
                 duration = intent.getExtras().getLong("duration");
+                mMusicName = intent.getStringExtra("name");
+                mMusicFormat = intent.getStringExtra("format");
+                mSimpleRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
+                mBitRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
+                mHandler.sendEmptyMessage(Contsant.Action.DURATION_MUSIC);
 				if(mTimer == null){
 					LogTool.d("mTimer == null");
 					mTimer = new Timer();
 					mTask = new LrcTask();
 					mTimer.schedule(mTask, 0, mPalyTimerDuration);
-				}
-				if(musicDatas != null){
-					LogTool.i("musicReceiver position:"+position);
-					int index = intent.getExtras().getInt("index");
-					LogTool.i("musicReceiver index:"+index);
-					musicDatas.get(position).setSampleRate(intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI));
-					musicDatas.get(position).setBitRate(intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI));
-					mHandler.sendEmptyMessage(Contsant.Action.DURATION_MUSIC);
-				}else{
-					LogTool.i("musicReceiver musicDatas null");
 				}
             } else if (action.equals(Contsant.PlayAction.MUSIC_NEXT)) {
                 mHandler.sendEmptyMessage(Contsant.Action.NEXTONE_MUSIC);
