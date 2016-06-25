@@ -233,6 +233,10 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		mIbBalance = (ImageButton)view.findViewById(R.id.ib_balance);
         mIbShare = (ImageButton) view.findViewById(R.id.ib_share);
         mIvMusicCd = (ImageView)view.findViewById(R.id.iv_music_cd);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_music_cd); //获取Bitmap图片
+        RoundedBitmapDrawable circularBitmapDrawable = RoundedBitmapDrawableFactory.create(getActivity().getResources(), bitmap);
+        circularBitmapDrawable.setCircular(true);
+        mIvMusicCd.setImageDrawable(circularBitmapDrawable);
         mIbVoice = (ImageButton)view.findViewById(R.id.ib_voice);
 		mTvCurrentTime = (TextView) view.findViewById(R.id.tv_current_time);
 		mTvDurationTime = (TextView) view.findViewById(R.id.tv_duration_time);
