@@ -149,9 +149,8 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case Contsant.Action.CURRENT_TIME_MUSIC:
-                    mCsbProgress.setProgress((int)currentTime);// 设置进度条
-                    mCsbProgress.setMax((int)duration);
-					showAudioInfo();
+                    mCsbProgress.setProgress((int) currentTime);// 设置进度条
+                    mCsbProgress.setMax((int) duration);
 					showPlayingTime(currentTime, duration);
 					updateLRC(currentTime);
                     break;
@@ -203,6 +202,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        Intent intent = new Intent();
+        intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
+        intent.putExtra(Contsant.START_SERVICE_FIRST, 1);// 向服务传递数据
+        intent.setPackage(getActivity().getPackageName());
+        getActivity().startService(intent);
     }
 
     @Override
@@ -303,11 +307,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         registerMusicReceiver();
-        //启动service
-        Intent intent = new Intent();
-        intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
-        intent.setPackage(getActivity().getPackageName());
-        getActivity().startService(intent);
     }
 
     private static MusicPlayFragment mInstance;
@@ -320,7 +319,10 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
     private void initData (Bundle bundle) {
         mCsbProgress.setProgress(0);
-        musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
+        List<MusicData> datas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
+        if(datas != null && datas.size() > 0){
+            musicDatas = datas;
+        }
         position = bundle.getInt(Contsant.POSITION_KEY);
         if (musicDatas != null) {
             randomIDs = new int[musicDatas.size()];
@@ -607,6 +609,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         filter.addAction(Contsant.PlayAction.MUSIC_UPDATE);
         filter.addAction(Contsant.PlayAction.MUSIC_STOP);//add by victor
 		filter.addAction(Contsant.PlayAction.PLAY_PAUSE_NEXT);
+        filter.addAction(Contsant.PlayAction.MUSIC_LIST);
         filter.addAction("notifi.update");
         getActivity().registerReceiver(musicReceiver, filter);
     }
@@ -618,33 +621,28 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
             String action = intent.getAction();
 			if (action.equals(Contsant.PlayAction.MUSIC_PREPARED)) {
 				LogTool.d("MusicService.MUSIC_PREPARED");
-
 			}else if (action.equals(Contsant.PlayAction.MUSIC_CURRENT)) {
 				currentTime = intent.getExtras().getLong("currentTime");// 获得当前播放位置
-				duration = intent.getExtras().getLong("duration");
-				/*if(musicDatas != null){
-					int index = intent.getExtras().getInt("index");
-					mSimpleRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
-					mBitRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
-				}*/
                 mHandler.sendEmptyMessage(Contsant.Action.CURRENT_TIME_MUSIC);
             } else if (action.equals(Contsant.PlayAction.MUSIC_DURATION)) {
-                duration = intent.getExtras().getLong("duration");
-                mMusicName = intent.getStringExtra("name");
-                mMusicFormat = intent.getStringExtra("format");
-                mSimpleRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
-                mBitRate = intent.getStringExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
+                position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
+                duration = intent.getExtras().getLong(Contsant.MUSIC_INFO_DURATION);
+                mMusicName = intent.getStringExtra(Contsant.MUSIC_INFO_NAME);
+                mMusicFormat = intent.getStringExtra(Contsant.MUSIC_INFO_FORMAT);
+                mSimpleRate = intent.getStringExtra(Contsant.MUSIC_INFO_SAMPLERATE);
+                mBitRate = intent.getStringExtra(Contsant.MUSIC_INFO_BITRATE);
                 mHandler.sendEmptyMessage(Contsant.Action.DURATION_MUSIC);
-				if(mTimer == null){
-					LogTool.d("mTimer == null");
-					mTimer = new Timer();
-					mTask = new LrcTask();
-					mTimer.schedule(mTask, 0, mPalyTimerDuration);
-				}
+                if(mTimer == null){
+                    LogTool.d("mTimer == null");
+                    mTimer = new Timer();
+                    mTask = new LrcTask();
+                    mTimer.schedule(mTask, 0, mPalyTimerDuration);
+                }
             } else if (action.equals(Contsant.PlayAction.MUSIC_NEXT)) {
                 mHandler.sendEmptyMessage(Contsant.Action.NEXTONE_MUSIC);
             } else if (action.equals(Contsant.PlayAction.MUSIC_UPDATE)) {
                 position = intent.getExtras().getInt("position");
+                LogTool.d("PlayAction.MUSIC_UPDATE  position:"+position);
                 mHandler.sendEmptyMessage(Contsant.Action.UPDATE_MUSIC);
 			}else if(action.equals(Contsant.PlayAction.PLAY_PAUSE_NEXT)){
                 int isPlaying = intent.getExtras().getInt("isPlaying");
@@ -652,6 +650,21 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                 msg.sendToTarget();
             } else if (action.equals(Contsant.PlayAction.MUSIC_STOP)) {//add by victor
                 mHandler.sendEmptyMessage(Contsant.Action.MUSIC_STOP);
+            }else if(action.equals(Contsant.PlayAction.MUSIC_LIST)){
+                position = intent.getExtras().getInt("position");
+                Bundle bundle = intent.getExtras();
+                LogTool.d("bundle != null"+(bundle != null) + position);
+                if(bundle != null){
+                    List<MusicData> datas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
+                    if(datas != null && datas.size() > 0){
+                        musicDatas = datas;
+                        position = bundle.getInt(Contsant.POSITION_KEY);
+                    }
+                    LogTool.d("bundle != null position:"+ position);
+                    if (musicDatas != null) {
+                        randomIDs = new int[musicDatas.size()];
+                    }
+                }
             }
         }
     };

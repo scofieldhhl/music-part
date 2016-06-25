@@ -47,7 +47,6 @@ import tv.danmaku.ijk.media.player.pragma.DebugLog;
 /**
  * 所有播放操作都交给服务,要服务就是为了实现后台播放,如果不用服务，那么一个界面关闭后，音乐也随着消失了。 但是用了服务这种情况不存在了。我们要做的永久
  * 在后台播放。直到用户把服务秒杀了。
- * @author 涙星
  */
 public class MusicService extends Service implements MediaPlayer.OnCompletionListener,Observer {
 	private static final String TAG = MusicService.class.getName();
@@ -139,23 +138,26 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	/** 初始化1*/
 	private void initAudioInfo() {
 		showMediaInfo();
-		final Intent intent = new Intent();
-		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
 		if(musicDatas != null && musicDatas.size() > position){
 			mMusicName = musicDatas.get(position).title;
 			mMusicFormat = musicDatas.get(position).getPath().substring(musicDatas.get(position).getPath().length() - 3).toUpperCase();
 		}
 		duration = mp.getDuration();
-		setBroadcastInfo(intent);
+		Intent intent = new Intent();
+		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
+		broadCastMusicInfo(intent);
 	}
 
-	private void setBroadcastInfo(Intent intent){
-		intent.putExtra("format", mMusicFormat);
-		intent.putExtra("name", mMusicName);
-		intent.putExtra("duration", duration);
-		intent.putExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI, mSampleRate);
-		intent.putExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI, mBitRate);
-		LogTool.i("initAudioInfo" + mSampleRate + mBitRate);
+	private void broadCastMusicInfo(Intent intent){
+		if(intent == null){
+			intent = new Intent();
+		}
+		intent.putExtra(Contsant.MUSIC_INFO_POSTION, position);
+		intent.putExtra(Contsant.MUSIC_INFO_NAME, mMusicName);
+		intent.putExtra(Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
+		intent.putExtra(Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
+		intent.putExtra(Contsant.MUSIC_INFO_BITRATE, mBitRate);
+		intent.putExtra(Contsant.MUSIC_INFO_DURATION, duration);
 		sendBroadcast(intent);
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
@@ -211,10 +213,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(nm != null){
 			nm.cancelAll();// 清除掉通知栏的信息
 		}
-		SharePreferencesUtil.putLong(mContext, Contsant.INFO_LAST_PLAY_DURATION, duration);
-		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_BITRATE, mBitRate);
-		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_SAMPLERATE, mSampleRate);
-		SharePreferencesUtil.putString(mContext, Contsant.INFO_LAST_PLAY_NAME, mMusicName);
+		SharePreferencesUtil.putInt(mContext, Contsant.MUSIC_INFO_POSTION, position);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mMusicName);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mBitRate);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mSampleRate);
+		SharePreferencesUtil.putLong(mContext, Contsant.MUSIC_INFO_DURATION, duration);
 		if (mp != null) {
 			mp.stop();// 停止播放
 			mp = null;
@@ -241,6 +245,33 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		LogTool.i("onStartCommand");
+		int startServiceFisrt = intent.getIntExtra(Contsant.START_SERVICE_FIRST, 0);
+		LogTool.d("startServiceFisrt:"+startServiceFisrt);
+		if(startServiceFisrt == 1){//首次启动拿上次播放记录
+			int ma_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
+			position = SharePreferencesUtil.getInt(mContext, Contsant.MUSIC_INFO_POSTION);
+			mMusicName = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
+			mMusicFormat = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_FORMAT);
+			mBitRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
+			mSampleRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
+			duration = SharePreferencesUtil.getLong(mContext, Contsant.MUSIC_INFO_DURATION);
+			Intent infoIntent = new Intent();
+			intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
+			broadCastMusicInfo(infoIntent);
+			switch (ma_data) {
+				case Contsant.Frag.MUSIC_LIST_FRAG:
+					break;
+				case Contsant.Frag.ARTIST_FRAG:
+					break;
+				case Contsant.Frag.ALBUM_FRAG:
+					break;
+				case Contsant.Frag.DIY_FRAG:
+					break;
+				default:
+					break;
+			}
+			return 0;
+		}
 		Bundle bundle = intent.getExtras();
 		if (bundle != null) {
 			musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
@@ -325,19 +356,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			ShowNotifcation();
 		} else {
 			LogTool.e("------------------------bundle == null----------------------------------");
-			int ma_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
-			switch (ma_data){
-				case Contsant.Frag.MUSIC_LIST_FRAG:
-					break;
-				case Contsant.Frag.ARTIST_FRAG:
-					break;
-				case Contsant.Frag.ALBUM_FRAG:
-					break;
-				case Contsant.Frag.DIY_FRAG:
-					break;
-				default:
-					break;
-			}
 		}
 
 		return super.onStartCommand(intent, flags, startId);
@@ -402,7 +420,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 							intent.setAction(Contsant.PlayAction.MUSIC_PREPARED);
 							currentTime =  mp.getCurrentPosition();
 							intent.putExtra("currentTime", currentTime);
-							setBroadcastInfo(intent);
+							sendBroadcast(intent);
 							handler.sendEmptyMessage(Contsant.PlayStatus.STATE_INFO);
 							break;
 						case Contsant.PlayStatus.STATE_INFO:
@@ -410,7 +428,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 									intent.setAction(Contsant.PlayAction.MUSIC_CURRENT);
 									currentTime =  mp.getCurrentPosition();
 									intent.putExtra("currentTime", currentTime);
-									setBroadcastInfo(intent);
+									broadCastMusicInfo(intent);
 								}
 							if(handler != null){
 								handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
@@ -429,8 +447,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 	/** 初始化1*/
 	private void setup() {
-		final Intent intent = new Intent();
-		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
 		try {
 			if (!mp.isPlaying()) {
 				mp.prepareAsync();
@@ -440,10 +456,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			e.printStackTrace();
 		}
 		duration = mp.getDuration();
-		intent.putExtra("duration", duration);
-		intent.putExtra(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI, mSampleRate);
-		intent.putExtra(IjkMediaFormat.KEY_IJK_BIT_RATE_UI, mBitRate);
-		sendBroadcast(intent);
+		Intent intent = new Intent();
+		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
+		broadCastMusicInfo(intent);
 	}
 
 	/** 获得随机位置*/
@@ -749,7 +764,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 							LogTool.i(getString(R.string.mi_bit_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI));
 							break;
 						case ITrackInfo.MEDIA_TRACK_TYPE_AUDIO:
-							LogTool.i(getString(R.string.mi_codec) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CODEC_LONG_NAME_UI));
+							/*LogTool.i(getString(R.string.mi_codec) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CODEC_LONG_NAME_UI));
 							LogTool.i(getString(R.string.mi_profile_level) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CODEC_PROFILE_LEVEL_UI));
 							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI));
 							LogTool.i(getString(R.string.mi_channels) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CHANNEL_UI));
@@ -759,11 +774,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_DIGIT_UI));
 							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_BIT_UI));
-							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_NUMBER_UI));
-							musicDatas.get(position).setSampleRate(mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI));
-							musicDatas.get(position).setBitRate(mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI));
+							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_NUMBER_UI));*/
 							mSampleRate = mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
 							mBitRate = mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
+							musicDatas.get(position).setSampleRate(mSampleRate);
+							musicDatas.get(position).setBitRate(mBitRate);
 							break;
 						default:
 							break;

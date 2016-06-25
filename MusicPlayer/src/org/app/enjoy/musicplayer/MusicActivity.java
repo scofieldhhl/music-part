@@ -371,15 +371,17 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 LogTool.d("distance:"+distance);
                 if(distance == 0 || distance < 10){
                     isClick = true;
-                }else {
-                    if(xDistance > 50 && distance > 50){//从左向右滑动并且x方向比y方向滑动距离>50
-                        Log.e(TAG,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>从左向右滑动");
+                } else if(distance > 50){
+                    if(xDistance > 50){//从左向右滑动并且x方向比y方向滑动距离>50
+                        Log.e(TAG,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>从左向右滑动xDistance = " + xDistance);
                         isNext = false;
-                    } else {//从右向左滑动
-                        Log.e(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<从右向左滑动");
+                    } else if (xDistance < -50){//从右向左滑动
+                        Log.e(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<从右向左滑动xDistance = " + xDistance);
                         isNext = true;
                     }
                     isClick = false;
+                } else {
+                    isClick = true;
                 }
                 break;
         }
@@ -476,7 +478,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 break;
             case R.id.l_play_bottom:
                 LogTool.d("l_play_bottom:");
-                startActivity(new Intent(MusicActivity.this, MusicPlayActivity.class));
+                playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
                 break;
         }
     }
@@ -663,15 +665,16 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
      * 根据Position播放音乐
      */
     public void playMusic(int position, long seekPosition) {
+        finish();
         if (musicDatas.size() > 0) {
-
-            Intent intent = new Intent(MusicActivity.this,MusicPlayActivity.class);
+            startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
             Bundle bundle = new Bundle();
             bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-            bundle.putInt(Contsant.POSITION_KEY, position);
-            bundle.putLong(Contsant.SEEK_POSITION, seekPosition);
+            bundle.putInt(Contsant.POSITION_KEY, currentPosition);
+            Intent intent = new Intent();
+            intent.setAction(Contsant.PlayAction.MUSIC_LIST);
             intent.putExtras(bundle);
-            startActivity(intent);
+            sendBroadcast(intent);
         } else {
             final XfDialog xfdialog = new XfDialog.Builder(MusicActivity.this).setTitle(getResources().getString(R.string.tip)).
                     setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).

@@ -37,11 +37,15 @@ public class Contsant {
 	public static final String DSD_CUE = ".cue";
 	public static final String MA_DATA = "madata";
 	public static final String CURRENT_FRAG = "CURRENT_FRAG";
+	public static final String START_SERVICE_FIRST = "start_service_first ";
 
-	public static final String INFO_LAST_PLAY_NAME= "last_play_name";
-	public static final String INFO_LAST_PLAY_SAMPLERATE = "last_play_sample_rate";
-	public static final String INFO_LAST_PLAY_BITRATE = "last_play_bit_rate";
-	public static final String INFO_LAST_PLAY_DURATION = "last_play_duration";
+	public static final String MUSIC_INFO_POSTION = "music_position";
+	public static final String MUSIC_INFO_NAME = "music_name";
+	public static final String MUSIC_INFO_FORMAT = "music_format";
+	public static final String MUSIC_INFO_SAMPLERATE = "music_sample_rate";
+	public static final String MUSIC_INFO_BITRATE = "music_bit_rate";
+	public static final String MUSIC_INFO_DURATION = "music_duration";
+
 	public static class Msg {
 		public static final int UPDATE_PLAY_LIST =                 0x101;
 		public static final int UPDATE_PLAY_LIST_EXTENSION =       0x102;
