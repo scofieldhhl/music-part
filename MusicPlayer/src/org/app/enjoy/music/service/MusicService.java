@@ -32,6 +32,7 @@ import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -92,6 +93,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		IntentFilter filter = new IntentFilter();
 		filter.addAction("android.intent.action.ANSWER");
 		filter.addAction("android.intent.action.ACTION_SHUTDOWN");
+		filter.addAction(Contsant.PlayAction.MUSIC_STOP_SERVICE);
 		registerReceiver(PhoneListener, filter);
 
 		IntentFilter filter1 = new IntentFilter();
@@ -124,6 +126,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				mp.seekTo(musicDatas.get(position).seekPostion);
 			}
 			initAudioInfo();
+			saveLastPlayInfo();
 		}
 	};
 
@@ -153,13 +156,16 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(intent == null){
 			intent = new Intent();
 		}
+		Bundle bundle = new Bundle();
+		bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+		intent.putExtras(bundle);
 		intent.putExtra(Contsant.MUSIC_INFO_POSTION, position);
 		intent.putExtra(Contsant.MUSIC_INFO_NAME, mMusicName);
 		intent.putExtra(Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
 		intent.putExtra(Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
 		intent.putExtra(Contsant.MUSIC_INFO_BITRATE, mBitRate);
 		intent.putExtra(Contsant.MUSIC_INFO_DURATION, duration);
-//		LogTool.d(position+mMusicName + mMusicFormat + mSampleRate);
+		LogTool.d(position + mMusicName + mMusicFormat + mSampleRate);
 		sendBroadcast(intent);
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
@@ -215,7 +221,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(nm != null){
 			nm.cancelAll();// 清除掉通知栏的信息
 		}
-		saveLastPlayInfo();
 		if (mp != null) {
 			mp.stop();// 停止播放
 			mp = null;
@@ -243,17 +248,17 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		LogTool.i("onStartCommand");
 		int startServiceFisrt = intent.getIntExtra(Contsant.START_SERVICE_FIRST, 0);
-		LogTool.d("startServiceFisrt:"+startServiceFisrt);
+		LogTool.d("startServiceFisrt:"+startServiceFisrt + "position:"+ position);
 		if(startServiceFisrt == 1){//首次启动拿上次播放记录
 			int ma_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
 			position = SharePreferencesUtil.getInt(mContext, Contsant.MUSIC_INFO_POSTION);
-			mMusicName = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
+			mMusicName = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_NAME);
 			mMusicFormat = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_FORMAT);
-			mBitRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
-			mSampleRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_DURATION);
+			mBitRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_BITRATE);
+			mSampleRate = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_SAMPLERATE);
 			duration = SharePreferencesUtil.getLong(mContext, Contsant.MUSIC_INFO_DURATION);
 			Intent infoIntent = new Intent();
-			intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
+			infoIntent.setAction(Contsant.PlayAction.MUSIC_DURATION);
 			broadCastMusicInfo(infoIntent);
 			switch (ma_data) {
 				case Contsant.Frag.MUSIC_LIST_FRAG:
@@ -655,6 +660,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				}
 			}else if(intent.getAction().equals(Intent.ACTION_SHUTDOWN)){
 				saveLastPlayInfo();
+			}else if(intent.getAction().equals(Contsant.PlayAction.MUSIC_STOP_SERVICE)){
+				saveLastPlayInfo();
+				if(mp != null){
+					mp.stop();
+					mp.reset();
+				}
+				stopSelf();//在service中停止service
 			}
 		}
 	};
@@ -662,11 +674,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	 * 记录最后一次播放信息
 	 * */
 	private void saveLastPlayInfo(){
+		LogTool.d(position + mMusicName + mSampleRate);
 		SharePreferencesUtil.putInt(mContext, Contsant.MUSIC_INFO_POSTION, position);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mMusicName);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_NAME, mMusicName);
 		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mBitRate);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mSampleRate);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_BITRATE, mBitRate);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
 		SharePreferencesUtil.putLong(mContext, Contsant.MUSIC_INFO_DURATION, duration);
 	}
 	/** 桌面小插件*/

@@ -113,4 +113,6 @@
     <string name="mi_profile_level"> archival </string>
     <string name="mi_pixel_format"> pixel format is: </string>
     <string name="mi_resolution"> Resolution </string>
+
+    <string name="play_init_data"> init data ... </string>
 </resources>

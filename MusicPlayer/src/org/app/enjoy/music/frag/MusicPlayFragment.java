@@ -1,9 +1,11 @@
 package org.app.enjoy.music.frag;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -25,7 +27,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -47,11 +48,11 @@ import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.FastBlur;
 import org.app.enjoy.music.tool.LRCbean;
 import org.app.enjoy.music.tool.LogTool;
+import org.app.enjoy.music.tool.XfDialog;
 import org.app.enjoy.music.util.CubeLeftOutAnimation;
 import org.app.enjoy.music.util.CubeLeftOutBackAnimation;
 import org.app.enjoy.music.util.CubeRightInAnimation;
 import org.app.enjoy.music.util.CubeRightInBackAnimation;
-import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.CircularSeekBar;
 import org.app.enjoy.music.view.DefaultLrcBuilder;
 import org.app.enjoy.music.view.FlingGalleryView;
@@ -60,7 +61,6 @@ import org.app.enjoy.music.view.ILrcView;
 import org.app.enjoy.music.view.LrcRow;
 import org.app.enjoy.music.view.LrcView;
 import org.app.enjoy.music.view.MovingTextView;
-import org.app.enjoy.music.view.SwipeBackLayout;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
 
@@ -82,8 +82,6 @@ import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
-
-import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
 
 /**
  * Created by Administrator on 2016/6/2.
@@ -119,7 +117,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private AudioManager audioManager;
     private int maxVolume;// 最大音量
     private int currentVolume;// 当前音量
-    private ImageButton mIbVoice;//右上角的音量图标
+    private ImageView mIbVoice;//右上角的音量图标
     private Toast toast;//提示消息
     private Context mContext;//上下文。这个重要！
     private Animation rotateAnim;//音乐光盘旋转动画
@@ -141,6 +139,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private ImageView mIvBgLrc;
 	private ArrayList<String> mLrcPathlist = new ArrayList<>();
 	private String mSimpleRate = "", mBitRate = "", mMusicFormat;
+    private XfDialog popupWindow;
 
     private Handler mHandler = new Handler(){
         @Override
@@ -201,11 +200,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        Intent intent = new Intent();
-        intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
-        intent.putExtra(Contsant.START_SERVICE_FIRST, 1);// 向服务传递数据
-        intent.setPackage(getActivity().getPackageName());
-        getActivity().startService(intent);
     }
 
     @Override
@@ -216,6 +210,29 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         return view;
     }
 
+    /**
+     * 判断某个服务是否正在运行的方法
+     * @param mContext
+     * @param serviceName 是包名+服务的类名（例如：net.loonggg.testbackstage.TestService）
+     * @return true代表正在运行，false代表服务没有正在运行
+     */
+    public boolean isServiceWork(Context mContext, String serviceName) {
+        boolean isWork = false;
+        ActivityManager myAM = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> myList = myAM.getRunningServices(40);
+        if (myList.size() <= 0) {
+            return false;
+        }
+        for (int i = 0; i < myList.size(); i++) {
+            String mName = myList.get(i).service.getClassName().toString();
+            if (mName.equals(serviceName)) {
+                isWork = true;
+                break;
+            }
+        }
+        LogTool.d("isServiceWork:" + isWork);
+        return isWork;
+    }
     private void initialize (View view) {
 		DataObservable.getInstance().addObserver(this);
         mLayoutActPlay=(LinearLayout) view.findViewById(R.id.l_activity_play);
@@ -236,7 +253,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         RoundedBitmapDrawable circularBitmapDrawable = RoundedBitmapDrawableFactory.create(getActivity().getResources(), bitmap);
         circularBitmapDrawable.setCircular(true);
         mIvMusicCd.setImageDrawable(circularBitmapDrawable);
-        mIbVoice = (ImageButton)view.findViewById(R.id.ib_voice);
+        mIbVoice = (ImageView)view.findViewById(R.id.ib_voice);
 		mTvCurrentTime = (TextView) view.findViewById(R.id.tv_current_time);
 		mTvDurationTime = (TextView) view.findViewById(R.id.tv_duration_time);
         mCsbProgress = (CircularSeekBar) view.findViewById(R.id.csb_progress);
@@ -310,6 +327,13 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         registerMusicReceiver();
+        if(!isServiceWork(getActivity(), "org.app.enjoy.music.service.MusicService")){
+            Intent intent = new Intent();
+            intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
+            intent.putExtra(Contsant.START_SERVICE_FIRST, 1);// 向服务传递数据
+            intent.setPackage(getActivity().getPackageName());
+            getActivity().startService(intent);
+        }
     }
 
     private static MusicPlayFragment mInstance;
@@ -558,7 +582,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         intent.putExtra("op",  Contsant.PlayStatus.STOP);
         intent.setPackage(getActivity().getPackageName());
         getActivity().startService(intent);
-
     }
 
     public void onResume() {
@@ -678,6 +701,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         mMusicFormat = intent.getStringExtra(Contsant.MUSIC_INFO_FORMAT);
         mSimpleRate = intent.getStringExtra(Contsant.MUSIC_INFO_SAMPLERATE);
         mBitRate = intent.getStringExtra(Contsant.MUSIC_INFO_BITRATE);
+        Bundle bundle = intent.getExtras();
+        if(bundle != null){
+            if(musicDatas == null){
+                musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
+            }
+        }
 //        LogTool.d("info:" + position+mMusicName +duration + mMusicFormat + mSimpleRate);
     }
 
@@ -699,17 +728,21 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         int i = view.getId();
         if (i == R.id.ib_back) {
             startActivity(new Intent(mContext, MusicActivity.class));
+		} else if (i == R.id.ib_voice) {
+                if(popupWindow != null && popupWindow.isShowing()){
+                    popupWindow.dismiss();
+                }else{
+                    popupWindow = new XfDialog.Builder(getActivity()).setTitle(R.string.info).setMessage(R.string.dialog_messenge).setPositiveButton(R.string.confrim, new DialogInterface.OnClickListener() {
 
-		} else if (i == R.id.ib_voice) {/*if (isSilence) {
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,currentVolume, 0);
-					mIbVoice.setImageResource(R.drawable.btn_voice_normal);
-					isSilence = false;
-				} else {
-					audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0, 0);
-					mIbVoice.setImageResource(R.drawable.icon_silence);
-					isSilence = true;
-				}*/
-
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent intent = new Intent();
+                            intent.setAction(Contsant.PlayAction.MUSIC_STOP_SERVICE);
+                            getActivity().sendBroadcast(intent);
+                            popupWindow.dismiss();
+                        }
+                    }).setNeutralButton(R.string.cancel, null).show();
+                }
 		} else if (i == R.id.ib_pre) {
 			if (musicDatas != null && musicDatas.size() > 0) {
 				lastOne();
@@ -726,8 +759,9 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 //					mIvMusicCd.startAnimation(rotateAnim);
 					play();
 				}
-			}
-
+			}else{
+                Toast.makeText(getActivity(), R.string.play_init_data,Toast.LENGTH_SHORT).show();
+            }
 		} else if (i == R.id.ib_fore) {
 			if (musicDatas != null && musicDatas.size() > 0) {
 				if (flag == STATE_PLAY) {

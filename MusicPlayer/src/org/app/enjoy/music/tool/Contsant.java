@@ -113,6 +113,7 @@ public class Contsant {
 		public static final String MUSIC_PREPARED = "com.app.prepared";
 
 		public static final String MUSIC_PLAY_SERVICE = "com.app.media.MUSIC_SERVICE";
+		public static final String MUSIC_STOP_SERVICE = "com.app.media.stopService";
 	}
 
 	/**
