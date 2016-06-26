@@ -59,7 +59,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     public static final int Ringtone = 0;
     public static final int Alarm = 1;
     public static final int Notification = 2;
-    private int currentPosition = 0;
+    private int currentPosition = -1;
     private int lastLongClickPosition = -1;
     private MusicListAdapter musicListAdapter;
     private List<MusicData> musicDatas = new ArrayList<MusicData>();
@@ -70,7 +70,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private int currentMusicId = -1;//当前播放音乐id
     private boolean isMusicRemove;//是否有音乐被移除
 
-
     Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -78,8 +77,16 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                 case Contsant.Msg.UPDATE_PLAY_LIST:
                     if (musicDatas != null && musicDatas.size() > 0) {
                         if (musicListAdapter != null) {
-                            musicListAdapter.setDatas(musicDatas);
-                            musicListAdapter.setCurrentPosition(currentPosition);
+                            if (currentPosition != -1) {
+                                musicListAdapter.setDatas(musicDatas);
+                                musicListAdapter.setCurrentPosition(currentPosition);
+                            }
+
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+                            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
+                            bundle.putInt(Contsant.POSITION_KEY, -1);
+                            DataObservable.getInstance().setData(bundle);
                         }
                     } else {
                         final XfDialog xfdialog = new XfDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.tip)).
@@ -89,12 +96,12 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                     }
 
                     break;
-                case Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION:
-                    if (musicListAdapter != null){
-                        musicListAdapter.setDatas(musicDatas);
-                        musicListAdapter.notifyDataSetChanged();
-                    }
-                    break;
+//                case Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION:
+//                    if (musicListAdapter != null){
+//                        musicListAdapter.setDatas(musicDatas);
+//                        musicListAdapter.notifyDataSetChanged();
+//                    }
+//                    break;
                 case Contsant.Msg.PLAY_CUE:
 //					if(mCueSongBeanList != null && mCueSongBeanList.size() > 0){
 ////						initPopWindow(mCueSongBeanList);
@@ -132,7 +139,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private void initData () {
         List<MusicData> musicList = MusicUtil.getAllSongs(getContext());
         musicDatas.addAll(musicList);
-        mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION);
+        mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
     }
 
     @Override
@@ -212,18 +219,11 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         if (musicListAdapter != null) {
             musicListAdapter.cancelLongClick(true);
         }
-        if (musicListAdapter != null) {
-            musicListAdapter.setCurrentPosition(position);
+        if (musicListAdapter != null && currentPosition != -1) {
+            musicListAdapter.setCurrentPosition(currentPosition);
+            sendBroadcast(currentPosition);
         }
 
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-        bundle.putInt(Contsant.POSITION_KEY, currentPosition);
-
-        Intent intent = new Intent();
-        intent.setAction(Contsant.PlayAction.MUSIC_LIST);
-        intent.putExtras(bundle);
-        getActivity().sendBroadcast(intent);
 
     }
 
@@ -252,8 +252,10 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             } else if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
                 if(position < musicDatas.size()) {
                     if (((MusicActivity) getActivity()).getCurrentPage() == 0) {
-                        currentPosition = position;
-                        mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                        if (currentPosition != position) {
+                            currentPosition = position;
+                            mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                        }
                     }
                 }
             }
@@ -302,7 +304,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                 LogTool.i( f.getPath());
                                 md.size = String.valueOf(f.length());
                                 musicDatas.add(md);
-                                mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION);
+                                mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
                                 break;
                             }
                         }
@@ -329,6 +331,18 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         }else{
             return null;
         }
+    }
+
+
+    private void sendBroadcast(int position){
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+        bundle.putInt(Contsant.POSITION_KEY, position);
+
+        Intent intent = new Intent();
+        intent.setAction(Contsant.PlayAction.MUSIC_LIST);
+        intent.putExtras(bundle);
+        getActivity().sendBroadcast(intent);
     }
 
 }

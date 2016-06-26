@@ -39,8 +39,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.data.MusicData;
@@ -106,7 +104,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private int position;// 定义一个位置，用于定位用户点击列表曲首
     private long currentTime;// 当前播放位置
     private long duration;// 总时间
-	private ImageButton mIbBack,mIbBalance;
+	private ImageView mIbBack,mIbBalance;
 	private ImageView mIvMusicCd;
 	private static final int STATE_PLAY = 1;// 播放状态设为1
 	private static final int STATE_PAUSE = 2;// 播放状态设为2
@@ -152,6 +150,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                     mCsbProgress.setProgress((int) currentTime);// 设置进度条
                     mCsbProgress.setMax((int) duration);
 					showPlayingTime(currentTime, duration);
+                    showAudioInfo();
 					updateLRC(currentTime);
                     break;
                 case Contsant.Action.DURATION_MUSIC:
@@ -220,7 +219,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private void initialize (View view) {
 		DataObservable.getInstance().addObserver(this);
         mLayoutActPlay=(LinearLayout) view.findViewById(R.id.l_activity_play);
-        mIbBack = (ImageButton)view.findViewById(R.id.ib_back);
+        mIbBack = (ImageView)view.findViewById(R.id.ib_back);
         mMTvMusicName = (MovingTextView) view.findViewById(R.id.mtv_music_name);
 		mTvFormat = (TextView) view.findViewById(R.id.tv_format);
 		mTvSimapleRate = (TextView) view.findViewById(R.id.tv_simaple_rate);
@@ -599,7 +598,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public void showAudioInfo (){
         mMTvMusicName.setText(mMusicName);
         mTvFormat.setText(mMusicFormat);
-        mTvSimapleRate.setText(mBitRate);
+        mTvSimapleRate.setText(mSimpleRate);
         mTvBitRate.setText(mBitRate);
 	}
     /**
@@ -626,15 +625,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			if (action.equals(Contsant.PlayAction.MUSIC_PREPARED)) {
 				LogTool.d("MusicService.MUSIC_PREPARED");
 			}else if (action.equals(Contsant.PlayAction.MUSIC_CURRENT)) {
+                getInfoFromBroadcast(intent);
 				currentTime = intent.getExtras().getLong("currentTime");// 获得当前播放位置
                 mHandler.sendEmptyMessage(Contsant.Action.CURRENT_TIME_MUSIC);
             } else if (action.equals(Contsant.PlayAction.MUSIC_DURATION)) {
-                position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
-                duration = intent.getExtras().getLong(Contsant.MUSIC_INFO_DURATION);
-                mMusicName = intent.getStringExtra(Contsant.MUSIC_INFO_NAME);
-                mMusicFormat = intent.getStringExtra(Contsant.MUSIC_INFO_FORMAT);
-                mSimpleRate = intent.getStringExtra(Contsant.MUSIC_INFO_SAMPLERATE);
-                mBitRate = intent.getStringExtra(Contsant.MUSIC_INFO_BITRATE);
+                getInfoFromBroadcast(intent);
                 mHandler.sendEmptyMessage(Contsant.Action.DURATION_MUSIC);
                 if(mTimer == null){
                     LogTool.d("mTimer == null");
@@ -673,6 +668,18 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         }
     };
 
+    private void getInfoFromBroadcast(Intent intent){
+        if(intent == null){
+            return;
+        }
+        position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
+        duration = intent.getExtras().getLong(Contsant.MUSIC_INFO_DURATION);
+        mMusicName = intent.getStringExtra(Contsant.MUSIC_INFO_NAME);
+        mMusicFormat = intent.getStringExtra(Contsant.MUSIC_INFO_FORMAT);
+        mSimpleRate = intent.getStringExtra(Contsant.MUSIC_INFO_SAMPLERATE);
+        mBitRate = intent.getStringExtra(Contsant.MUSIC_INFO_BITRATE);
+//        LogTool.d("info:" + position+mMusicName +duration + mMusicFormat + mSimpleRate);
+    }
 
 
     /**

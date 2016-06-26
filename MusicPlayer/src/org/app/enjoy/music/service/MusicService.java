@@ -91,6 +91,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		ShowNotifcation();
 		IntentFilter filter = new IntentFilter();
 		filter.addAction("android.intent.action.ANSWER");
+		filter.addAction("android.intent.action.ACTION_SHUTDOWN");
 		registerReceiver(PhoneListener, filter);
 
 		IntentFilter filter1 = new IntentFilter();
@@ -158,6 +159,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		intent.putExtra(Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
 		intent.putExtra(Contsant.MUSIC_INFO_BITRATE, mBitRate);
 		intent.putExtra(Contsant.MUSIC_INFO_DURATION, duration);
+//		LogTool.d(position+mMusicName + mMusicFormat + mSampleRate);
 		sendBroadcast(intent);
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
@@ -213,12 +215,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(nm != null){
 			nm.cancelAll();// 清除掉通知栏的信息
 		}
-		SharePreferencesUtil.putInt(mContext, Contsant.MUSIC_INFO_POSTION, position);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mMusicName);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mBitRate);
-		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mSampleRate);
-		SharePreferencesUtil.putLong(mContext, Contsant.MUSIC_INFO_DURATION, duration);
+		saveLastPlayInfo();
 		if (mp != null) {
 			mp.stop();// 停止播放
 			mp = null;
@@ -656,9 +653,22 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 					default:
 						break;
 				}
+			}else if(intent.getAction().equals(Intent.ACTION_SHUTDOWN)){
+				saveLastPlayInfo();
 			}
 		}
 	};
+	/**
+	 * 记录最后一次播放信息
+	 * */
+	private void saveLastPlayInfo(){
+		SharePreferencesUtil.putInt(mContext, Contsant.MUSIC_INFO_POSTION, position);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mMusicName);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mBitRate);
+		SharePreferencesUtil.putString(mContext, Contsant.MUSIC_INFO_DURATION, mSampleRate);
+		SharePreferencesUtil.putLong(mContext, Contsant.MUSIC_INFO_DURATION, duration);
+	}
 	/** 桌面小插件*/
 	protected BroadcastReceiver appWidgetReceiver = new BroadcastReceiver() {
 

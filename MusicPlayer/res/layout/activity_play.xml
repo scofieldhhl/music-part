@@ -22,20 +22,20 @@
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:paddingLeft="20dp"
             android:paddingRight="20dp" >
-            <ImageButton
+            <ImageView
                 android:id="@+id/ib_back"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
-                android:background="@null"
-                android:src="@drawable/icon_left"/>
+                android:scaleType="center"
+                android:src="@drawable/btn_play_icon_list"/>
                 <org.app.enjoy.music.view.MovingTextView
                     android:id="@+id/mtv_music_name"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginLeft="20dp"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="40dp"
                     android:textSize="18sp"
                     android:textColor="@color/white"
                     android:layout_gravity="center"
@@ -46,8 +46,8 @@
                     android:marqueeRepeatLimit="marquee_forever" />
             <ImageButton
                 android:id="@+id/ib_voice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:background="@null"

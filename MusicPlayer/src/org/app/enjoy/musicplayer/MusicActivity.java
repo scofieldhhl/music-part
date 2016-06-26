@@ -499,10 +499,11 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
             if (action == Contsant.Action.UPDATE_MUSIC) {
                 musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
-                mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
             }  else  if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
                 if(position < musicDatas.size()) {
-                    currentPosition = position;
+                    if (position != -1 && currentPosition != position) {
+                        currentPosition = position;
+                    }
                     mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
                 }
             } else if (action == Contsant.Action.MUSIC_STOP) {//后台发过来的播放位置改变前台同步改变
@@ -510,7 +511,9 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             } else if (action == Contsant.Action.REMOVE_MUSIC) {
                 if (musicDatas != null && musicDatas.size() > 0) {
                     if (position < musicDatas.size()) {
-                        musicDatas.remove(position);
+                        if (position != -1) {
+                            musicDatas.remove(position);
+                        }
                     }
                 }
             }
@@ -626,6 +629,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         filter.addAction(Contsant.PlayAction.MUSIC_NEXT);
         filter.addAction(Contsant.PlayAction.MUSIC_UPDATE);
         filter.addAction(Contsant.PlayAction.MUSIC_STOP);
+        filter.addAction(Contsant.PlayAction.MUSIC_CURRENT);
         registerReceiver(musicReceiver, filter);
 
     }
@@ -639,8 +643,9 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 Bundle bundle = intent.getExtras();
                 if (bundle != null) {
                     if (bundle.containsKey(Contsant.MUSIC_LIST_KEY)) {
-                        currentPosition = bundle.getInt(Contsant.POSITION_KEY);
                         musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
+                        int position = bundle.getInt(Contsant.POSITION_KEY);
+                        currentPosition = position;
                         mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
                     }
                 }
@@ -657,6 +662,17 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 mHandler.sendEmptyMessage(Contsant.PlayStatus.PAUSE);
             } else if (action.equals(Contsant.PlayAction.MUSIC_STOP)) {
                 mHandler.sendEmptyMessage(Contsant.Action.MUSIC_STOP);
+            } else if (action.equals(Contsant.PlayAction.MUSIC_CURRENT)) {
+                int position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
+                if (currentPosition != position) {
+                    currentPosition = position;
+                    mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
+
+                    Bundle bundle = new Bundle();
+                    bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
+                    bundle.putInt(Contsant.POSITION_KEY, position);
+                    DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
+                }
             }
         }
     };
@@ -689,4 +705,5 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         }
         return 0;
     }
+
 }
