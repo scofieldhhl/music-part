@@ -160,12 +160,12 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             }
         }.start();
 
-        // 设置皮肤背景
+        /*// 设置皮肤背景
         Setting setting = new Setting(getActivity(), false);
         mLvSongs.setBackgroundResource(setting.getCurrentSkinResId());//这里我只设置listview的皮肤而已。
         MobclickAgent.onResume(getActivity());
         Intent intentServer = new Intent(getActivity(), MusicService.class);
-        getActivity().startService(intentServer);
+        getActivity().startService(intentServer);*/
     }
 
     public void onPause() {

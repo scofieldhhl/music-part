@@ -290,7 +290,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			return;
 		}
 
-		if (position >= tabsContainer.getChildCount() - 1) {
+		if (position > tabCount - 1) {
 			return;
 		}
 
@@ -325,7 +325,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		rectPaint.setColor(indicatorColor);
 
 
-		if (currentPosition >= tabsContainer.getChildCount() - 1) {
+		if (currentPosition > tabCount - 1) {
 			return;
 		}
 		// default: line below current tab
@@ -362,7 +362,7 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			currentPosition = position;
 			currentPositionOffset = positionOffset;
 
-			if (position < tabsContainer.getChildCount() - 1) {
+			if (position < tabCount) {
 				scrollToChild(position, (int) (positionOffset * tabsContainer.getChildAt(position).getWidth()));
 				invalidate();
 			}

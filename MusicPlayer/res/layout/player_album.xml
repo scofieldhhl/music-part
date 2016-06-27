@@ -6,8 +6,8 @@
     android:orientation="vertical">
 
     <FrameLayout
-        android:layout_width="240dp"
-        android:layout_height="240dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_centerInParent="true">
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -16,7 +16,8 @@
         <org.app.enjoy.music.view.CircleImageView
             android:id="@+id/iv_music_cd"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:src="@drawable/icon_music_cd_cricle"/>
         </RelativeLayout>
         <org.app.enjoy.music.view.CircularSeekBar
             android:id="@+id/csb_progress"

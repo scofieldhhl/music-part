@@ -25,7 +25,10 @@
         <LinearLayout
             android:id="@+id/l_tabs"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="55dp"
+            android:paddingTop="1dp"
+            android:paddingBottom="1dp"
+            android:background="@color/white"
             android:orientation="horizontal"
             android:gravity="center">
         <org.app.enjoy.music.view.PagerSlidingTabStrip
@@ -45,9 +48,9 @@
             android:background="@color/black"/>
             <ImageView
                 android:id="@+id/iv_search"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:scaleType="centerInside"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:scaleType="fitXY"
                 android:layout_toRightOf="@+id/tabs"
                 android:src="@drawable/icon_search"/>
         </LinearLayout>

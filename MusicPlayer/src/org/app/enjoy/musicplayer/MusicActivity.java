@@ -79,10 +79,10 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     private AttrViewPager viewPager;
 
     public static int loop_flag = Contsant.LoopMode.LOOP_ORDER;
-    private Menu xmenu;//自定义菜单
+//    private Menu xmenu;//自定义菜单
     private Toast toast;//提示
-    private Timers timer;//倒计时内部对象
-    private TextView timers;//显示倒计时的文字
+//    private Timers timer;//倒计时内部对象
+//    private TextView timers;//显示倒计时的文字
     private CircleImageView mCivAlbum;
     private MovingTextView mMtvTitle;
     private int c;//同上
@@ -135,7 +135,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music);
         initialize();
-        LoadMenu();
+//        LoadMenu();
     }
 
     @Override
@@ -175,7 +175,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         viewPagerAdapter.setFrags(frags);
         viewPager.setAdapter(viewPagerAdapter);
         tabs.setViewPager(viewPager);
-        timers=(TextView) findViewById(R.id.timer_clock);
+//        timers=(TextView) findViewById(R.id.timer_clock);
         mCivAlbum = (CircleImageView) findViewById(R.id.civ_album);
         mMtvTitle = (MovingTextView) findViewById(R.id.mtv_title);
 
@@ -217,7 +217,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     /**
      * 初始化菜单
      */
-    private void LoadMenu() {
+   /* private void LoadMenu() {
         xmenu = new Menu(this);
         List<int[]> data1 = new ArrayList<int[]>();
         data1.add(new int[]{R.drawable.btn_menu_skin, R.string.skin_settings});
@@ -228,14 +228,14 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             @Override
             public void onClickListener(int position, View view) {
                 xmenu.cancel();
-                /*if (position == 0) {
+                *//*if (position == 0) {
                     Intent it = new Intent(MusicActivity.this, SkinSettingActivity.class);
                     startActivityForResult(it, 2);
 
                 } else if (position == 1) {
                     exit();
 
-                }*/
+                }*//*
             }
         });
         List<int[]> data2 = new ArrayList<int[]>();
@@ -268,18 +268,18 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             @Override
             public void onClickListener(int position, View view) {
                 xmenu.cancel();
-                /*Intent intent = new Intent(MusicActivity.this, AboutActivity.class);
-                startActivity(intent);*/
+                *//*Intent intent = new Intent(MusicActivity.this, AboutActivity.class);
+                startActivity(intent);*//*
 
             }
         });
         xmenu.create();
-    }
+    }*/
 
     /**
      * 休眠方法
      */
-    private void Sleep(){
+   /* private void Sleep(){
         final EditText edtext = new EditText(this);
         edtext.setText("5");//设置初始值
         edtext.setKeyListener(new DigitsKeyListener(false, true));
@@ -295,7 +295,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
                 dialog.cancel();
-                /**如果输入小于2或者等于0会告知用户**/
+                *//**如果输入小于2或者等于0会告知用户**//*
                 if (edtext.length() <= 2 && edtext.length() != 0) {
                     if (".".equals(edtext.getText().toString())) {
                         toast = Contsant.showMessage(toast, MusicActivity.this, getResources().getString(R.string.enter_error));
@@ -319,7 +319,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             }
         }).setNegativeButton(R.string.cancel, null).show();
 
-    }
+    }*/
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
@@ -391,7 +391,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     /**
      * 产生一个倒计时
      */
-    private class Timers extends CountDownTimer{
+  /*  private class Timers extends CountDownTimer{
 
         public Timers(long millisInFuture, long countDownInterval) {
             super(millisInFuture, countDownInterval);
@@ -419,13 +419,12 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             timers.setText(abc + ":" + b);
             timers.setVisibility(View.GONE);
         }
-
-    }
+    }*/
 
     /**
      * 复写菜单方法
      */
-    @Override
+   /* @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
         menu.add("menu");
         return super.onCreateOptionsMenu(menu);
@@ -433,11 +432,11 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
     @Override
     public boolean onMenuOpened(int featureId, android.view.Menu menu) {
-        /** 菜单在哪里显示。参数1是该布局总的ID，第二个位置，第三，四个是XY坐标 **/
+        *//** 菜单在哪里显示。参数1是该布局总的ID，第二个位置，第三，四个是XY坐标 **//*
         xmenu.showAtLocation(findViewById(R.id.rl_parent_cotent), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
-        /** 如果返回true的话就会显示系统自带的菜单，反之返回false的话就显示自己写的。 **/
+        *//** 如果返回true的话就会显示系统自带的菜单，反之返回false的话就显示自己写的。 **//*
         return false;
-    }
+    }*/
 
     /**
      * 退出程序方法
@@ -544,14 +543,14 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         return false;
     }
 
-    @Override
+   /* @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (popupWindow != null && popupWindow.isShowing()) {
             popupWindow.dismiss();
             popupWindow = null;
         }
         return super.onTouchEvent(event);
-    }
+    }*/
 
 
     /**

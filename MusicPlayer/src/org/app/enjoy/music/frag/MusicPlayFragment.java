@@ -53,6 +53,7 @@ import org.app.enjoy.music.util.CubeLeftOutAnimation;
 import org.app.enjoy.music.util.CubeLeftOutBackAnimation;
 import org.app.enjoy.music.util.CubeRightInAnimation;
 import org.app.enjoy.music.util.CubeRightInBackAnimation;
+import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.CircularSeekBar;
 import org.app.enjoy.music.view.DefaultLrcBuilder;
@@ -108,7 +109,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private static final int STATE_PLAY = 1;// 播放状态设为1
 	private static final int STATE_PAUSE = 2;// 播放状态设为2
 
-    public static int loop_flag = Contsant.LoopMode.LOOP_ORDER;
+    public static int loop_flag = Contsant.LoopMode.LOOP_ALL;
     public static boolean random_flag = false;
     public static int[] randomIDs = null;
     public static int randomNum = 0;
@@ -141,6 +142,8 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private ArrayList<String> mLrcPathlist = new ArrayList<>();
 	private String mSimpleRate = "", mBitRate = "", mMusicFormat;
     private XfDialog popupWindow;
+    private int mMa_data;//当前播放列表
+    private List<MusicData> mMusicDatasNull = new ArrayList<>();
 
     private Handler mHandler = new Handler(){
         @Override
@@ -250,10 +253,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		mIbBalance = (ImageButton)view.findViewById(R.id.ib_balance);
         mIbShare = (ImageButton) view.findViewById(R.id.ib_share);
         mIvMusicCd = (CircleImageView)view.findViewById(R.id.iv_music_cd);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_music_cd); //获取Bitmap图片
-        RoundedBitmapDrawable circularBitmapDrawable = RoundedBitmapDrawableFactory.create(getActivity().getResources(), bitmap);
-        circularBitmapDrawable.setCircular(true);
-        mIvMusicCd.setImageDrawable(circularBitmapDrawable);
         mIbVoice = (ImageView)view.findViewById(R.id.ib_voice);
 		mTvCurrentTime = (TextView) view.findViewById(R.id.tv_current_time);
 		mTvDurationTime = (TextView) view.findViewById(R.id.tv_duration_time);
@@ -580,7 +579,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         bundle.putInt(Contsant.POSITION_KEY, position);
         intent.putExtras(bundle);
 		intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
-        intent.putExtra("op",  Contsant.PlayStatus.STOP);
+        intent.putExtra("op", Contsant.PlayStatus.STOP);
         intent.setPackage(getActivity().getPackageName());
         getActivity().startService(intent);
     }
@@ -661,6 +660,16 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                     mTask = new LrcTask();
                     mTimer.schedule(mTask, 0, mPalyTimerDuration);
                 }
+                if(musicDatas == null || musicDatas.size() == 0){
+                    //异步检索其他音频文件
+                    new Thread(){
+                        @Override
+                        public void run() {
+                            initMusicData();
+                            GetMusicFiles(getSDPath(), arrMusicExtension, true);
+                        }
+                    }.start();
+                }
             } else if (action.equals(Contsant.PlayAction.MUSIC_NEXT)) {
                 mHandler.sendEmptyMessage(Contsant.Action.NEXTONE_MUSIC);
             } else if (action.equals(Contsant.PlayAction.MUSIC_UPDATE)) {
@@ -692,10 +701,22 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         }
     };
 
+    private void initMusicData () {
+        List<MusicData> musicList = MusicUtil.getAllSongs(getActivity());
+        mMusicDatasNull.addAll(musicList);
+        if(mMusicName == null || TextUtils.isEmpty(mMusicName)){//没有获取上次播放记录时，自动播放第一首
+            position = 0;
+            musicDatas = mMusicDatasNull;
+            play();
+        }
+        LogTool.d("initMusicData" + mMusicDatasNull.size());
+    }
+
     private void getInfoFromBroadcast(Intent intent){
         if(intent == null){
             return;
         }
+        mMa_data = intent.getExtras().getInt(Contsant.CURRENT_FRAG);
         position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
         duration = intent.getExtras().getLong(Contsant.MUSIC_INFO_DURATION);
         mMusicName = intent.getStringExtra(Contsant.MUSIC_INFO_NAME);
@@ -760,9 +781,22 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 //					mIvMusicCd.startAnimation(rotateAnim);
 					play();
 				}
-			}else{
+			}else if(mMusicDatasNull != null && mMusicDatasNull.size() > 0){
+                LogTool.d("mMusicDatasNull != null && mMusicDatasNull.size() > 0");
+                for(int j = 0; j < mMusicDatasNull.size(); j++){
+                    MusicData music = mMusicDatasNull.get(j);
+                    if(music != null && mMusicName.equalsIgnoreCase(music.getTitle())) {
+                        position = j;
+                        musicDatas = mMusicDatasNull;
+                        play();
+                        return;
+                    }
+                }
+                Toast.makeText(getActivity(), R.string.play_init_data,Toast.LENGTH_SHORT).show();
+            }else {
                 Toast.makeText(getActivity(), R.string.play_init_data,Toast.LENGTH_SHORT).show();
             }
+
 		} else if (i == R.id.ib_fore) {
 			if (musicDatas != null && musicDatas.size() > 0) {
 				if (flag == STATE_PLAY) {
@@ -784,7 +818,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		} else if (i == R.id.ib_loop_mode) {
 			loop_flag++;
 			if (loop_flag > 4) {
-				loop_flag = 1;
+				loop_flag = 2;//去掉顺序播放功能
 			}
 			setPlayModeBg();
 
@@ -920,11 +954,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			Animation albumanim = AnimationUtils.loadAnimation(getActivity(), R.anim.album_replace);
 			/**开始播放动画效果**/
 //			mIvMusicCd.startAnimation(albumanim);
-            RoundedBitmapDrawable circularBitmapDrawable =
+            /*RoundedBitmapDrawable circularBitmapDrawable =
                     RoundedBitmapDrawableFactory.create(mContext.getResources(), bitmap);
             circularBitmapDrawable.setCircular(true);
-            mIvMusicCd.setImageDrawable(circularBitmapDrawable);
-//            mIvMusicCd.setImageBitmap(bitmap);
+            mIvMusicCd.setImageDrawable(circularBitmapDrawable);*/
+            mIvMusicCd.setImageBitmap(bitmap);
 			mIvBgLrc.setImageBitmap(bitmap);
 			/**为专辑图片添加倒影,这样有种立体感的效果**/
 //		iv_player_ablum_reflection.setImageBitmap(ImageUtil.createReflectionBitmapForSingle(bm));
@@ -943,9 +977,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			ILrcBuilder builder = new DefaultLrcBuilder();
 			List<LrcRow> rows = builder.getLrcRows(lrc);
 			mLrcView.setLrc(rows);
-		}else{
-			mIvMusicCd.setBackgroundResource(R.drawable.icon_music_cd);
-//			mIvBgLrc.setImageBitmap(null);
 		}
     }
 
@@ -1088,7 +1119,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	private static Bitmap getDefaultArtwork(Context context) {
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inPreferredConfig = Bitmap.Config.RGB_565;
-		return BitmapFactory.decodeStream(context.getResources().openRawResource(R.drawable.icon_music_cd), null, opts);
+		return BitmapFactory.decodeStream(context.getResources().openRawResource(R.drawable.icon_music_cd_cricle), null, opts);
 	}
 
 	private String getAlbumartPath(long songid, long albumid){
@@ -1328,6 +1359,55 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 				GetFiles(f.getPath(), arrExtension, IsIterative);
 		}
 	}
+
+    private String[] arrMusicExtension = new String[]{"dsf","dff","dst","dsd", "wma", "aif", "aac"};
+    public void GetMusicFiles(String Path, String[] arrExtension, boolean IsIterative)  //搜索目录，扩展名，是否进入子文件夹
+    {
+        if(Path == null || TextUtils.isEmpty(Path)){
+            return;
+        }
+        File[] files = new File(Path).listFiles();
+
+        for (int i = 0; i < files.length; i++)
+        {
+            File f = files[i];
+            if (f.isFile())
+            {
+                String[] arrFile = f.getPath().split("\\.");
+                if(arrFile != null && arrFile.length >0){
+                    int length = arrFile.length;
+                    if(arrFile[length -1] != null){
+                        for(String str : arrExtension){
+                            if(arrFile[length -1].equalsIgnoreCase(str)){
+                                MusicData md = new MusicData();
+                                String[] arrFileName = f.getPath().split("/");
+                                md.title = arrFile[length -1];
+                                if(arrFileName != null && arrFileName.length > 0){
+                                    md.title = arrFileName[arrFileName.length - 1].substring(0,arrFileName[arrFileName.length - 1].indexOf("."));
+                                }
+                                md.duration = 0;
+                                md.artist = "";
+                                md.displayName = md.title;
+                                md.data = f.getPath();
+                                md.path = f.getPath();
+                                LogTool.i( f.getPath());
+                                md.size = String.valueOf(f.length());
+                                mMusicDatasNull.add(md);
+                                LogTool.d("GetMusicFiles:"+f.getPath());
+//                                mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!IsIterative)
+                    break;
+            }
+            else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)  //忽略点文件（隐藏文件/文件夹）
+                GetMusicFiles(f.getPath(), arrMusicExtension, IsIterative);
+        }
+    }
 
 	public String getSDPath(){
 		File sdDir = null;

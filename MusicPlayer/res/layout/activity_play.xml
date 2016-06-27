@@ -19,9 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="@dimen/activity_vertical_margin"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp" >
+            android:layout_marginTop="10dp">
             <ImageView
                 android:id="@+id/ib_back"
                 android:layout_width="50dp"
@@ -96,7 +94,7 @@
             android:id="@+id/fgv_player_main"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="7" >
+            android:layout_weight="9" >
 
             <include
                 android:id="@+id/player_main_album"
@@ -130,7 +128,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="10dp"
             android:paddingBottom="10dp"
             android:gravity="center"
             android:orientation="horizontal">
@@ -156,8 +153,7 @@
     <LinearLayout
         android:id="@+id/widget38"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="60dp"
         android:orientation="horizontal"
         android:gravity="center"
         android:background="@color/dark_grey">
@@ -196,8 +192,7 @@
     <LinearLayout
         android:id="@+id/widget42"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="60dp"
         android:orientation="horizontal"
         android:gravity="center"
         android:background="@color/dark_grey">
