@@ -53,6 +53,7 @@ import org.app.enjoy.music.util.CubeLeftOutAnimation;
 import org.app.enjoy.music.util.CubeLeftOutBackAnimation;
 import org.app.enjoy.music.util.CubeRightInAnimation;
 import org.app.enjoy.music.util.CubeRightInBackAnimation;
+import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.CircularSeekBar;
 import org.app.enjoy.music.view.DefaultLrcBuilder;
 import org.app.enjoy.music.view.FlingGalleryView;
@@ -103,7 +104,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private long currentTime;// 当前播放位置
     private long duration;// 总时间
 	private ImageView mIbBack,mIbBalance;
-	private ImageView mIvMusicCd;
+	private CircleImageView mIvMusicCd;
 	private static final int STATE_PLAY = 1;// 播放状态设为1
 	private static final int STATE_PAUSE = 2;// 播放状态设为2
 
@@ -248,7 +249,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         mIbLoopMode=(ImageButton)view.findViewById(R.id.ib_loop_mode);
 		mIbBalance = (ImageButton)view.findViewById(R.id.ib_balance);
         mIbShare = (ImageButton) view.findViewById(R.id.ib_share);
-        mIvMusicCd = (ImageView)view.findViewById(R.id.iv_music_cd);
+        mIvMusicCd = (CircleImageView)view.findViewById(R.id.iv_music_cd);
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.icon_music_cd); //获取Bitmap图片
         RoundedBitmapDrawable circularBitmapDrawable = RoundedBitmapDrawableFactory.create(getActivity().getResources(), bitmap);
         circularBitmapDrawable.setCircular(true);

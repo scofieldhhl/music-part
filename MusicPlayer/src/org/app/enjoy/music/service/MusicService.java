@@ -72,6 +72,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private String mBitRate;
 	private Context mContext;
 	private String mMusicName, mMusicFormat;
+	private int mMa_data;//当前播放列表
 	@Override
 	public void onCreate() {
 		LogTool.i("onCreate");
@@ -146,6 +147,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			mMusicName = musicDatas.get(position).title;
 			mMusicFormat = musicDatas.get(position).getPath().substring(musicDatas.get(position).getPath().length() - 3).toUpperCase();
 		}
+		mMa_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
 		duration = mp.getDuration();
 		Intent intent = new Intent();
 		intent.setAction(Contsant.PlayAction.MUSIC_DURATION);
@@ -156,16 +158,17 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(intent == null){
 			intent = new Intent();
 		}
-		Bundle bundle = new Bundle();
-		bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-		intent.putExtras(bundle);
+//		Bundle bundle = new Bundle();
+//		bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+//		intent.putExtras(bundle);
+		intent.putExtra(Contsant.CURRENT_FRAG, mMa_data);
 		intent.putExtra(Contsant.MUSIC_INFO_POSTION, position);
 		intent.putExtra(Contsant.MUSIC_INFO_NAME, mMusicName);
 		intent.putExtra(Contsant.MUSIC_INFO_FORMAT, mMusicFormat);
 		intent.putExtra(Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
 		intent.putExtra(Contsant.MUSIC_INFO_BITRATE, mBitRate);
 		intent.putExtra(Contsant.MUSIC_INFO_DURATION, duration);
-		LogTool.d(position + mMusicName + mMusicFormat + mSampleRate);
+//		LogTool.d(position + mMusicName + mMusicFormat + mSampleRate);
 		sendBroadcast(intent);
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
@@ -248,9 +251,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		LogTool.i("onStartCommand");
 		int startServiceFisrt = intent.getIntExtra(Contsant.START_SERVICE_FIRST, 0);
-		LogTool.d("startServiceFisrt:"+startServiceFisrt + "position:"+ position);
+		//LogTool.d("startServiceFisrt:" + startServiceFisrt + "position:" + position);
 		if(startServiceFisrt == 1){//首次启动拿上次播放记录
-			int ma_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
+			mMa_data = SharePreferencesUtil.getInt(mContext, Contsant.CURRENT_FRAG);
 			position = SharePreferencesUtil.getInt(mContext, Contsant.MUSIC_INFO_POSTION);
 			mMusicName = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_NAME);
 			mMusicFormat = SharePreferencesUtil.getString(mContext, Contsant.MUSIC_INFO_FORMAT);
@@ -260,18 +263,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			Intent infoIntent = new Intent();
 			infoIntent.setAction(Contsant.PlayAction.MUSIC_DURATION);
 			broadCastMusicInfo(infoIntent);
-			switch (ma_data) {
-				case Contsant.Frag.MUSIC_LIST_FRAG:
-					break;
-				case Contsant.Frag.ARTIST_FRAG:
-					break;
-				case Contsant.Frag.ALBUM_FRAG:
-					break;
-				case Contsant.Frag.DIY_FRAG:
-					break;
-				default:
-					break;
-			}
 			return 0;
 		}
 		Bundle bundle = intent.getExtras();

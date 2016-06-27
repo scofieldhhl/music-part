@@ -13,11 +13,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="@dimen/activity_vertical_margin">
-        <ImageView
+        <org.app.enjoy.music.view.CircleImageView
             android:id="@+id/iv_music_cd"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitXY"/>
+            android:layout_height="match_parent"/>
         </RelativeLayout>
         <org.app.enjoy.music.view.CircularSeekBar
             android:id="@+id/csb_progress"
