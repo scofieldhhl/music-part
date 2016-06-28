@@ -66,4 +66,6 @@
   <string name="mi_resolution">分辨率</string>
 
     <string name="play_init_data">正在初始化数据... </string>
+    <string name="diy_custom">自定义</string>
+    <string name="diy_fav">我的最爱</string>
 </resources>

@@ -539,7 +539,7 @@ public class PlayMusicActivity extends BaseActivity  implements OnClickListener,
 		}.start();
 		// 设置皮肤背景
 		Setting setting = new Setting(this, false);
-		mLayoutActPlay.setBackgroundResource(setting.getCurrentSkinResId());
+//		mLayoutActPlay.setBackgroundResource(setting.getCurrentSkinResId());
 		setup();
 //		mIvMusicCd.startAnimation(rotateAnim);
 //		play();  //移到PlaylistActivity OnItem事件中

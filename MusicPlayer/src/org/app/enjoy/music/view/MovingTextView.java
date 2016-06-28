@@ -26,7 +26,7 @@ public class MovingTextView extends TextView {
   
     @Override  
     public boolean isFocused() {  
-        return true;
+        return false;
     }  
   
 }  

@@ -36,8 +36,8 @@ public class BaseActivity extends FragmentActivity {
 			attributes.screenBrightness=Setting.KEY_DARKNESS;
 			getWindow().setAttributes(attributes);
 		}
-		this.getWindow().setBackgroundDrawableResource(
-				setting.getCurrentSkinResId());
+		//this.getWindow().setBackgroundDrawableResource(
+		//		setting.getCurrentSkinResId());
 		commonRecevier=new CommonRecevier();
 		// Initialize the Mobile Ads SDK.
 	}
