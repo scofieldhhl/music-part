@@ -579,6 +579,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         super.onResume();
         MobclickAgent.onResume(getActivity());
         ReadSDLrc();
+        isSeeking = false;
     }
     public void onPause() {
         super.onPause();

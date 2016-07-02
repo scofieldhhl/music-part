@@ -58,8 +58,8 @@ public class Contsant {
 		public static final int PLAY_LRC_SWITCH =       0x109;
 		public static final int UPDATE_ARTIST_LIST =       0x110;
 		public static final int UPDATE_ALBUM_LIST =       0x111;
-
-		public static final int UPDATE_SEEK_BAR =       0x112;
+		public static final int SEARCH_MUSIC_COMPLETE =       0x112;
+		public static final int UPDATE_SEEK_BAR =       0x113;
 	}
 
 	public static class Frag {

@@ -296,7 +296,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 			// 发送的长度
 			int length = intent.getIntExtra("length", -1);
-			if (musicDatas == null || position >= musicDatas.size()) {
+			if (musicDatas == null || position >= musicDatas.size() || position == -1) {
 				return 0;
 			}
 			if (musicDatas.get(position).path != null) {
