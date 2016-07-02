@@ -59,6 +59,7 @@ public class Contsant {
 		public static final int UPDATE_ARTIST_LIST =       0x110;
 		public static final int UPDATE_ALBUM_LIST =       0x111;
 
+		public static final int UPDATE_SEEK_BAR =       0x112;
 	}
 
 	public static class Frag {
@@ -81,6 +82,7 @@ public class Contsant {
 		public static final int PLAY_MUSIC =                 0x209;
 		public static final int GOTO_MUSIC_PLAY_FRAG =                 0x210;
 		public static final int GOTO_MUSIC_LIST_FRAG =                 0x211;
+		public static final int MUSIC_LIST_ITEM_CLICK =                 0x212;
 	}
 
 	public static class PlayStatus {

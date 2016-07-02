@@ -17,7 +17,7 @@
             android:id="@+id/iv_music_cd"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/icon_music_cd_cricle"/>
+            android:src="@drawable/icon_music_cd"/>
         </RelativeLayout>
         <org.app.enjoy.music.view.CircularSeekBar
             android:id="@+id/csb_progress"

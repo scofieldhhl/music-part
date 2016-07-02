@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -59,7 +60,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private long currentTime;// 播放时间
 	private long duration;// 总时间
 	private DBHelper dbHelper = null;// 数据库对象
-	private int flag;// 标识
+	public static int flag;// 标识
 	private int position;// 位置
 	public static Notification notification;// 通知栏显示当前播放音乐
 	public static NotificationManager nm;
@@ -73,18 +74,26 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private Context mContext;
 	private String mMusicName, mMusicFormat;
 	private int mMa_data;//当前播放列表
+	private PowerManager.WakeLock mWakeLock;
 	@Override
 	public void onCreate() {
 		LogTool.i("onCreate");
 		super.onCreate();
 		mContext = this;
 		release(false);
+
+		AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+		am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
 		try {
 			IjkMediaPlayer ijkMediaPlayer = null;
 			ijkMediaPlayer = new IjkMediaPlayer();
 			mp = ijkMediaPlayer;
 			mp.setOnCompletionListener(mCompletionListener);
 			mp.setOnInfoListener(mInfoListener);
+			mp.setScreenOnWhilePlaying(true);
+			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+			mp.setWakeMode(MusicService.this, PowerManager.PARTIAL_WAKE_LOCK);
 		} catch (Exception ex) {
 			Log.e(TAG, "Unable to open content: " + uri, ex);
 			return;
@@ -105,6 +114,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		registerReceiver(appWidgetReceiver, filter1);
 		registerHeadsetPlugReceiver();
 		DataObservable.getInstance().addObserver(this);
+
+		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,getString(R.string.title_activity_play));
+		mWakeLock.acquire();//保持cup不休眠
 	}
 
 	private void release(boolean cleartargetstate) {
@@ -140,6 +153,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			return false;
 		}
 	};
+
+	private IMediaPlayer.OnBufferingUpdateListener mBufferingUpdateListener =
+			new IMediaPlayer.OnBufferingUpdateListener() {
+				public void onBufferingUpdate(IMediaPlayer mp, int percent) {
+//					mCurrentBufferPercentage = percent;
+				}
+			};
 	/** 初始化1*/
 	private void initAudioInfo() {
 		showMediaInfo();
@@ -218,6 +238,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 	@Override
 	public void onDestroy() {
+		mWakeLock.release();
 		DataObservable.getInstance().deleteObserver(this);
 		super.onDestroy();
 		Log.e(TAG, "MusicService is onDestroy().....................");
@@ -275,7 +296,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 			// 发送的长度
 			int length = intent.getIntExtra("length", -1);
-			if (position >= musicDatas.size()) {
+			if (musicDatas == null || position >= musicDatas.size()) {
 				return 0;
 			}
 			if (musicDatas.get(position).path != null) {
@@ -381,7 +402,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				msg.sendToTarget();
 			}
 		}
-		flag = 1;
+		flag = 0;
 	}
 
 	/** 停止*/
@@ -480,7 +501,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	 * 下一首
 	 */
 	private void nextOne() {
-		switch (MusicActivity.loop_flag) {
+		switch (MusicPlayFragment.loop_flag) {
 			case Contsant.LoopMode.LOOP_ORDER://顺序播放
 				if (position == musicDatas.size() - 1) {
 					stop();
@@ -738,17 +759,17 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				if(intent.hasExtra("state")){
 					if(intent.getIntExtra("state", 0)==0){
 						pause();
-						Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_LONG).show();
+						Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_SHORT).show();
 					}
 				}else{
 					pause();
-					Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_LONG).show();
+					Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_SHORT).show();
 					Log.e(TAG, "!!!intent.hasExtra(state)");
 				}
 			}else if ("android.intent.action.HEADSET_PLUG".equals(action)) {
 				if(intent.getIntExtra("state", 0)==1){
 					play();
-					Toast.makeText(context,context.getResources().getString(R.string.headset_in), Toast.LENGTH_LONG).show();
+					Toast.makeText(context,context.getResources().getString(R.string.headset_in), Toast.LENGTH_SHORT).show();
 				}
 			}
 		}
@@ -778,17 +799,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 							LogTool.i(getString(R.string.mi_bit_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI));
 							break;
 						case ITrackInfo.MEDIA_TRACK_TYPE_AUDIO:
-							/*LogTool.i(getString(R.string.mi_codec) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CODEC_LONG_NAME_UI));
-							LogTool.i(getString(R.string.mi_profile_level) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CODEC_PROFILE_LEVEL_UI));
-							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI));
-							LogTool.i(getString(R.string.mi_channels) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_CHANNEL_UI));
-							LogTool.i(getString(R.string.mi_bit_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI));
-							LogTool.i(getString(R.string.mi_frame_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_FRAME_RATE_UI));
-							LogTool.i(getString(R.string.mi_resolution) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_RESOLUTION_UI));
-
-							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_DIGIT_UI));
-							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_BIT_UI));
-							LogTool.i(getString(R.string.mi_sample_rate) + mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_NUMBER_UI));*/
 							mSampleRate = mediaFormat.getString(IjkMediaFormat.KEY_IJK_SAMPLE_RATE_UI);
 							mBitRate = mediaFormat.getString(IjkMediaFormat.KEY_IJK_BIT_RATE_UI);
 							musicDatas.get(position).setSampleRate(mSampleRate);

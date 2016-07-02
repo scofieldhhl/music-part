@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.app.enjoy.musicplayer"
     android:installLocation="preferExternal"
-    android:versionCode="10627"
-    android:versionName="1.6.0627">
+    android:versionCode="10702"
+    android:versionName="1.6.07021708">
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -38,12 +38,14 @@
             android:name=".PlayMusicActivity"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
             android:theme="@android:style/Theme.Light.NoTitleBar" >
         </activity>
         <activity
             android:name=".MusicPlayActivity"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.NoTitleBarTranslucent" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -51,12 +53,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="org.app.enjoy.music.service.MusicService">
+        <service android:name="org.app.enjoy.music.service.MusicService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Player"
+            android:stopWithTask="false">
             <intent-filter>
                 <action android:name="com.app.media.MUSIC_SERVICE" />
                 <!-- 关机广播 -->
                 <action android:name="android.intent.action.ACTION_SHUTDOWN" />
                 <action android:name="com.app.media.stopService" />
+            </intent-filter>
+        </service>
+
+        <service android:name="org.app.enjoy.music.service.LogService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Player"
+            android:stopWithTask="false">
+            <intent-filter>
+                <action android:name="MONITOR_LOG_SIZE" />
+                <!-- 关机广播 -->
+                <action android:name="SWITCH_LOG_FILE_ACTION" />
             </intent-filter>
         </service>
 
@@ -86,6 +104,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.NoTitleBarTranslucent"/>
 
         <provider

@@ -2,25 +2,18 @@ package org.app.enjoy.music.frag;
 
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -40,15 +33,18 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
+import org.app.enjoy.music.service.LogService;
 import org.app.enjoy.music.tool.Contsant;
-import org.app.enjoy.music.tool.FastBlur;
 import org.app.enjoy.music.tool.LRCbean;
 import org.app.enjoy.music.tool.LogTool;
 import org.app.enjoy.music.tool.XfDialog;
+import org.app.enjoy.music.util.AlbumImgUtil;
 import org.app.enjoy.music.util.CubeLeftOutAnimation;
 import org.app.enjoy.music.util.CubeLeftOutBackAnimation;
 import org.app.enjoy.music.util.CubeRightInAnimation;
@@ -68,14 +64,9 @@ import org.app.enjoy.musicplayer.R;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -89,8 +80,7 @@ import java.util.TreeMap;
  * Created by Administrator on 2016/6/2.
  */
 public class MusicPlayFragment extends Fragment implements View.OnClickListener,CircularSeekBar.OnCircularSeekBarChangeListener,Observer,View.OnTouchListener {
-	private static final Uri sArtworkUri = Uri.parse("content://media/external/audio/albumart");
-    private LinearLayout mLayoutActPlay;
+    private final int DELAY_CHANGE_PROGRESS = 2 * 1000;
     private MovingTextView mMTvMusicName;// 音乐名
     private String mMusicName = "";
 	private TextView mTvFormat, mTvSimapleRate, mTvBitRate;// 艺术家
@@ -114,7 +104,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     public static int[] randomIDs = null;
     public static int randomNum = 0;
     private int flag;// 标记
-    private Cursor cursor;// 游标
     private TreeMap<Integer, LRCbean> lrc_map = new TreeMap<Integer, LRCbean>();// Treemap对象
     private AudioManager audioManager;
     private int maxVolume;// 最大音量
@@ -144,20 +133,19 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private XfDialog popupWindow;
     private int mMa_data;//当前播放列表
     private List<MusicData> mMusicDatasNull = new ArrayList<>();
+    private boolean isCatchLog = false;
+    private boolean isSeeking = false;
 
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what){
                 case Contsant.Action.CURRENT_TIME_MUSIC:
-                    mCsbProgress.setProgress((int) currentTime);// 设置进度条
-                    mCsbProgress.setMax((int) duration);
-					showPlayingTime(currentTime, duration);
+                    showPlayingTime(currentTime, duration);
                     showAudioInfo();
 					updateLRC(currentTime);
                     break;
                 case Contsant.Action.DURATION_MUSIC:
-                    mCsbProgress.setMax((int)duration);
 					showPlayingTime(currentTime, duration);
                     showAudioInfo();
                     break;
@@ -191,12 +179,10 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 						mFlingView.setToScreen(0, true);
 					}
 					ReadSDLrc();
-					/*if(mBitmapAlbumart != null){
-						blur(mBitmapAlbumart, mIvBgLrc);
-					}else{
-						mIvBgLrc.setBackground(null);
-					}*/
 					break;
+                case Contsant.Msg.UPDATE_SEEK_BAR:
+                    isSeeking = false;
+                    break;
 			}
 		}
 	};
@@ -239,7 +225,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     }
     private void initialize (View view) {
 		DataObservable.getInstance().addObserver(this);
-        mLayoutActPlay=(LinearLayout) view.findViewById(R.id.l_activity_play);
         mIbBack = (ImageView)view.findViewById(R.id.ib_back);
         mMTvMusicName = (MovingTextView) view.findViewById(R.id.mtv_music_name);
 		mTvFormat = (TextView) view.findViewById(R.id.tv_format);
@@ -331,6 +316,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
             Intent intent = new Intent();
             intent.setAction(Contsant.PlayAction.MUSIC_PLAY_SERVICE);
             intent.putExtra(Contsant.START_SERVICE_FIRST, 1);// 向服务传递数据
+            intent.setPackage(getActivity().getPackageName());
+            getActivity().startService(intent);
+        }
+
+        if(!isServiceWork(getActivity(), "org.app.enjoy.music.service.LogService") && isCatchLog){
+            Intent intent = new Intent(getActivity(), LogService.class);
             intent.setPackage(getActivity().getPackageName());
             getActivity().startService(intent);
         }
@@ -843,7 +834,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	public void onProgressChanged(CircularSeekBar circularSeekBar, long progress, boolean fromUser) {
 		if (fromUser) {
 			mPositionSeek = progress;
-//			seekbar_change(progress);
+            isSeeking = true;
 		}else if (circularSeekBar.getId() == R.id.sb_player_voice) {
 			// 设置音量
 			audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int)progress, 0);
@@ -854,6 +845,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	public void onStopTrackingTouch(CircularSeekBar seekBar) {
 		if(musicDatas != null && musicDatas.size() > 0){
 			seekbar_change(mPositionSeek);
+            mHandler.sendEmptyMessageDelayed(Contsant.Msg.UPDATE_SEEK_BAR, DELAY_CHANGE_PROGRESS);
 			play();
 		}
 	}
@@ -883,15 +875,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         switch (loop_flag) {
             case Contsant.LoopMode.LOOP_ORDER:
                 mIbLoopMode.setImageResource(R.drawable.player_btn_player_mode_sequence);
-                toast = Contsant.showMessage(toast, getActivity(), getResources().getString(R.string.loop_none_tip));
                 break;
             case Contsant.LoopMode.LOOP_ONE:
                 mIbLoopMode.setImageResource(R.drawable.player_btn_player_mode_circleone);
-                toast = Contsant.showMessage(toast, getActivity(), getResources().getString(R.string.loop_one_tip));
                 break;
             case Contsant.LoopMode.LOOP_ALL:
                 mIbLoopMode.setImageResource(R.drawable.player_btn_player_mode_circlelist);
-                toast = Contsant.showMessage(toast, getActivity(), getResources().getString(R.string.loop_all_tip));
                 break;
             case Contsant.LoopMode.LOOP_RANDOM:
 				if(musicDatas != null && musicDatas.size() >0){
@@ -900,7 +889,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 					}
 				}
                 mIbLoopMode.setImageResource(R.drawable.player_btn_player_mode_random);
-                toast = Contsant.showMessage(toast,getActivity(), getResources().getString(R.string.loop_random_tip));
                 break;
         }
     }
@@ -939,289 +927,73 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		if(musicDatas == null || musicDatas.size() == 0){
 			return;
 		}
-		/**我们现在的歌词就是要String数组的第4个参数-显示文件名字**/
-		cursor = getActivity().getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-				new String[] { MediaStore.Audio.Media.TITLE,
-						MediaStore.Audio.Media.DURATION,
-						MediaStore.Audio.Media.ARTIST,
-						MediaStore.Audio.Media.ALBUM,
-						MediaStore.Audio.Media.DISPLAY_NAME,
-						MediaStore.Audio.Media.ALBUM_ID }, "_id=?",new String[] { musicDatas.get(position).getId() + "" }, null);
-		cursor.moveToFirst();// 将游标移至第一位
-		if(cursor.getCount() > 0){
-			final Bitmap bitmap = getArtwork(getActivity(), musicDatas.get(position).getId(), cursor.getInt(5), true);
-			/**切换播放时候专辑图片出现透明效果**/
-			Animation albumanim = AnimationUtils.loadAnimation(getActivity(), R.anim.album_replace);
-			/**开始播放动画效果**/
+        long albumid = -1;
+        String cursorName = null;
+        Cursor cursor = null;
+		try{
+            /**我们现在的歌词就是要String数组的第4个参数-显示文件名字**/
+            cursor = getActivity().getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    new String[] { MediaStore.Audio.Media.TITLE,
+                            MediaStore.Audio.Media.DURATION,
+                            MediaStore.Audio.Media.ARTIST,
+                            MediaStore.Audio.Media.ALBUM,
+                            MediaStore.Audio.Media.DISPLAY_NAME,
+                            MediaStore.Audio.Media.ALBUM_ID }, "_id=?",new String[] { musicDatas.get(position).getId() + "" }, null);
+            cursor.moveToFirst();// 将游标移至第一位
+            if(cursor.getCount() > 0){
+                /**切换播放时候专辑图片出现透明效果**/
+                Animation albumanim = AnimationUtils.loadAnimation(getActivity(), R.anim.album_replace);
+                /**开始播放动画效果**/
 //			mIvMusicCd.startAnimation(albumanim);
-            /*RoundedBitmapDrawable circularBitmapDrawable =
-                    RoundedBitmapDrawableFactory.create(mContext.getResources(), bitmap);
-            circularBitmapDrawable.setCircular(true);
-            mIvMusicCd.setImageDrawable(circularBitmapDrawable);*/
-            mIvMusicCd.setImageBitmap(bitmap);
-			mIvBgLrc.setImageBitmap(bitmap);
-			/**为专辑图片添加倒影,这样有种立体感的效果**/
-//		iv_player_ablum_reflection.setImageBitmap(ImageUtil.createReflectionBitmapForSingle(bm));
-			/**游标定位到DISPLAY_NAME**/
-			String name = cursor.getString(4);
-			LogTool.i(cursor.getString(4));
-			/**sd卡的音乐名字截取字符窜并找到它的位置,这步重要，没有写一直表示歌词文件无法显示,顺便说声不同手机型号SD卡有不同的路径。**/
-//			String lrcPath = "/storage/sdcard0/Download/" + name.substring(0, name.indexOf(".")) + ".lrc";
-			String lrcName = name.substring(0, name.indexOf(".")) + ".lrc";
-//			read(lrcPath);
-			/** 在调试时我先把音乐名字写死，运行时候在控制台打印出音乐名字，那么由此判断歌名没问题.只是没有获取位置**/
+                albumid = cursor.getInt(5);
+                /**游标定位到DISPLAY_NAME**/
+                cursorName = cursor.getString(4);
 
-			String lrc = getLrcFromPath(lrcName);
-			LogTool.d("lrc:" + lrc);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
 
-			ILrcBuilder builder = new DefaultLrcBuilder();
-			List<LrcRow> rows = builder.getLrcRows(lrc);
-			mLrcView.setLrc(rows);
-		}
+        if(musicDatas != null && musicDatas.size() > position){
+            String albumartPath = AlbumImgUtil.getAlbumartPath(musicDatas.get(position).getId(), albumid, getActivity());
+            Glide.with(mContext)//加载显示圆形图片
+                    .load(albumartPath)
+                    .asBitmap()
+                    .placeholder(R.drawable.icon_music_cd)
+                    .centerCrop()
+                    .into(new BitmapImageViewTarget(mIvMusicCd) {
+                        @Override
+                        protected void setResource(Bitmap resource) {
+                            RoundedBitmapDrawable circularBitmapDrawable =
+                                    RoundedBitmapDrawableFactory.create(mContext.getResources(), resource);
+                            circularBitmapDrawable.setCircular(true);
+                            mIvMusicCd.setImageDrawable(circularBitmapDrawable);
+                        }
+                    });
+            Glide.with(mContext)//加载显示圆形图片
+                    .load(albumartPath)
+                    .asBitmap()
+                    .placeholder(R.drawable.icon_music_cd)
+                    .centerCrop()
+                    .into(mIvBgLrc);
+        }
+
+        if(cursorName != null && !TextUtils.isEmpty(cursorName)){
+            String lrcName = cursorName.substring(0, cursorName.indexOf(".")) + ".lrc";
+
+            String lrc = getLrcFromPath(lrcName);
+            LogTool.d("lrc:" + lrc);
+
+            ILrcBuilder builder = new DefaultLrcBuilder();
+            List<LrcRow> rows = builder.getLrcRows(lrc);
+            mLrcView.setLrc(rows);
+        }
     }
 
-    /**
-	 * 以下是歌曲放的时候显示专辑图片。和列表不同,播放时图片要大。所以cam那个方法写合适的图片吧
-	 */
-	public static Bitmap getArtwork(Context context, long song_id, long album_id, boolean allowdefault) {
-		if (album_id < 0) {
-
-			if (song_id >= 0) {
-				Bitmap bm = getArtworkFromFile(context, song_id, -1);
-				if (bm != null) {
-					return bm;
-				}
-			}
-			if (allowdefault) {
-				return getDefaultArtwork(context);
-			}
-			return null;
-		}
-		ContentResolver res = context.getContentResolver();
-		Uri uri = ContentUris.withAppendedId(sArtworkUri, album_id);
-		if (uri != null) {
-			InputStream in = null;
-			try {
-				in = res.openInputStream(uri);
-				BitmapFactory.Options options = new BitmapFactory.Options();
-				/**先指定原始大小**/
-				options.inSampleSize = 1;
-				/** 只进行大小判断**/
-				options.inJustDecodeBounds = true;
-				/**调用此方法得到options得到图片的大小**/
-				BitmapFactory.decodeStream(in, null, options);
-				/**我们的目标是在你N pixel的画面上显示。 所以需要调用computeSampleSize得到图片缩放的比例**/
-				/**这里的target为800是根据默认专辑图片大小决定的，800只是测试数字但是试验后发现完美的结合**/
-				options.inSampleSize = computeSampleSize(options, 600);
-				/**我们得到了缩放的比例，现在开始正式读入BitMap数据**/
-				options.inJustDecodeBounds = false;
-				options.inDither = false;
-				options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-				in = res.openInputStream(uri);
-				return BitmapFactory.decodeStream(in, null, options);
-			} catch (FileNotFoundException ex) {
-
-				Bitmap bm = getArtworkFromFile(context, song_id, album_id);
-				if (bm != null) {
-					if (bm.getConfig() == null) {
-						bm = bm.copy(Bitmap.Config.RGB_565, false);
-						if (bm == null && allowdefault) {
-							return getDefaultArtwork(context);
-						}
-					}
-				} else if (allowdefault) {
-					bm = getDefaultArtwork(context);
-				}
-				return bm;
-			} finally {
-				try {
-					if (in != null) {
-						in.close();
-					}
-				} catch (IOException ex) {
-				}
-			}
-		}
-
-		return null;
-	}
-
-	private static Bitmap getArtworkFromFile(Context context, long songid,
-											 long albumid) {
-		Bitmap bm = null;
-		if (albumid < 0 && songid < 0) {
-			throw new IllegalArgumentException(
-					"Must specify an album or a song id");
-		}
-		try {
-
-			BitmapFactory.Options options = new BitmapFactory.Options();
-
-			FileDescriptor fd = null;
-			if (albumid < 0) {
-				Uri uri = Uri.parse("content://media/external/audio/media/"
-						+ songid + "/albumart");
-				ParcelFileDescriptor pfd = context.getContentResolver()
-						.openFileDescriptor(uri, "r");
-				if (pfd != null) {
-					fd = pfd.getFileDescriptor();
-				}
-			} else {
-				Uri uri = ContentUris.withAppendedId(sArtworkUri, albumid);
-				ParcelFileDescriptor pfd = context.getContentResolver()
-						.openFileDescriptor(uri, "r");
-				if (pfd != null) {
-					fd = pfd.getFileDescriptor();
-				}
-			}
-			options.inSampleSize = 1;
-			// 只进行大小判断
-			options.inJustDecodeBounds = true;
-			// 调用此方法得到options得到图片的大小
-			BitmapFactory.decodeFileDescriptor(fd, null, options);
-			// 我们的目标是在800pixel的画面上显示。
-			// 所以需要调用computeSampleSize得到图片缩放的比例
-			options.inSampleSize = 100;
-			// OK,我们得到了缩放的比例，现在开始正式读入BitMap数据
-			options.inJustDecodeBounds = false;
-			options.inDither = false;
-			options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-
-			// 根据options参数，减少所需要的内存
-			bm = BitmapFactory.decodeFileDescriptor(fd, null, options);
-		} catch (FileNotFoundException ex) {
-
-		}
-
-		return bm;
-	}
-
-	/**这个函数会对图片的大小进行判断，并得到合适的缩放比例，比如2即1/2,3即1/3**/
-	static int computeSampleSize(BitmapFactory.Options options, int target) {
-		int w = options.outWidth;
-		int h = options.outHeight;
-		int candidateW = w / target;
-		int candidateH = h / target;
-		int candidate = Math.max(candidateW, candidateH);
-		if (candidate == 0)
-			return 1;
-		if (candidate > 1) {
-			if ((w > target) && (w / candidate) < target)
-				candidate -= 1;
-		}
-		if (candidate > 1) {
-			if ((h > target) && (h / candidate) < target)
-				candidate -= 1;
-		}
-		return candidate;
-	}
-
-	private static Bitmap getDefaultArtwork(Context context) {
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inPreferredConfig = Bitmap.Config.RGB_565;
-		return BitmapFactory.decodeStream(context.getResources().openRawResource(R.drawable.icon_music_cd_cricle), null, opts);
-	}
-
-	private String getAlbumartPath(long songid, long albumid){
-		Uri uri;
-		if (albumid < 0) {
-			uri = Uri.parse("content://media/external/audio/media/"+ songid + "/albumart");
-		} else {
-			uri = ContentUris.withAppendedId(sArtworkUri, albumid);
-		}
-		return String.valueOf(uri);
-	}
-
-	/**
-	 * 读取歌词的方法，采用IO方法一行一行的显示
-	 */
-	private void read(String path) {
-		LogTool.i(path);
-		path = "/storage/sdcard0/Download/浮夸-陈奕迅.lrc";
-		lrc_map.clear();
-		TreeMap<Integer, LRCbean> lrc_read = new TreeMap<Integer, LRCbean>();
-		String data = "";
-		BufferedReader br = null;
-		File file = new File(path);
-		/**如果没有歌词，则用没有歌词显示**/
-		if (!file.exists()) {
-			LogTool.e("!file.exists()");
-			Animation lrcanim=AnimationUtils.loadAnimation(getActivity(), R.anim.album_replace);
-			mTvlrcText.setText(R.string.no_lrc_messenge);
-			mTvlrcText.startAnimation(lrcanim);
-			return;
-		}
-		FileInputStream stream = null;
-		try {
-			stream = new FileInputStream(file);
-			br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));//记得歌词一定要设置UTF-8，否则歌词编码直接乱码喔。
-		} catch (FileNotFoundException e) {
-			LogTool.e("FileNotFoundException");
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			LogTool.e("UnsupportedEncodingException");
-			e.printStackTrace();
-		}
-		try {
-			while ((data = br.readLine()) != null) {
-				LogTool.d(data);
-				if (data.length() > 6) {
-					if (data.charAt(3) == ':' && data.charAt(6) == '.') {// 从歌词正文开始
-						data = data.replace("[", "");
-						data = data.replace("]", "@");
-						data = data.replace(".", ":");
-						String lrc[] = data.split("@");
-						String lrcContent = null;
-						if (lrc.length == 2) {
-							lrcContent = lrc[lrc.length - 1];// 歌词
-						} else {
-							lrcContent = "";
-						}
-
-						for (int i = 0; i < lrc.length - 1; i++) {
-							String lrcTime[] = lrc[0].split(":");
-
-							int m = Integer.parseInt(lrcTime[0]);// 分
-							int s = Integer.parseInt(lrcTime[1]);// 秒
-							int ms = Integer.parseInt(lrcTime[2]);// 毫秒
-
-							int begintime = (m * 60 + s) * 1000 + ms;// 转换成毫秒
-							LRCbean lrcbean = new LRCbean();
-							lrcbean.setBeginTime(begintime);// 设置歌词开始时间
-							lrcbean.setLrcBody(lrcContent);// 设置歌词的主体
-							lrc_read.put(begintime, lrcbean);
-
-						}
-
-					}
-				}
-			}
-			stream.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		// 计算每句歌词需要的时间
-		lrc_map.clear();
-		data = "";
-		Iterator<Integer> iterator = lrc_read.keySet().iterator();
-		LRCbean oldval = null;
-		int i = 0;
-
-		while (iterator.hasNext()) {
-			Object ob = iterator.next();
-			LRCbean val = lrc_read.get(ob);
-			if (oldval == null) {
-				oldval = val;
-			} else {
-				LRCbean item1 = new LRCbean();
-				item1 = oldval;
-				item1.setLineTime(val.getBeginTime() - oldval.getBeginTime());
-				lrc_map.put(new Integer(i), item1);
-				i++;
-				oldval = val;
-			}
-		}
-	}
 	private void updateLRC(long position){
 		Iterator<Integer> iterator = lrc_map.keySet().iterator();
 		while (iterator.hasNext()) {
@@ -1295,32 +1067,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	};
 
 	private void showPlayingTime(long currentTime, long duration){
-		mTvCurrentTime.setText(toTime((int) currentTime));
-		mTvDurationTime.setText( toTime((int) duration));
-	}
-
-	private void blur(Bitmap bkg, View view) {
-		long startMs = System.currentTimeMillis();
-		float scaleFactor = 8f;//图片缩放比例；
-		float radius = 2;//模糊程度
-
-		Bitmap overlay = Bitmap.createBitmap(
-				(int) (view.getMeasuredWidth() / scaleFactor),
-				(int) (view.getMeasuredHeight() / scaleFactor),
-				Bitmap.Config.ARGB_8888);
-		Canvas canvas = new Canvas(overlay);
-		canvas.translate(-view.getLeft() / scaleFactor, -view.getTop() / scaleFactor);
-		canvas.scale(1 / scaleFactor, 1 / scaleFactor);
-		Paint paint = new Paint();
-		paint.setFlags(Paint.FILTER_BITMAP_FLAG);
-		canvas.drawBitmap(bkg, 0, 0, paint);
-
-		overlay = FastBlur.doBlur(overlay, (int) radius, true);
-		view.setBackground(new BitmapDrawable(getResources(), overlay));
-		/**
-		 * 打印高斯模糊处理时间，如果时间大约16ms，用户就能感到到卡顿，时间越长卡顿越明显，如果对模糊完图片要求不高，可是将scaleFactor设置大一些。
-		 */
-		LogTool.d("blur time:" + (System.currentTimeMillis() - startMs));
+        if(!isSeeking) {
+            mCsbProgress.setProgress((int) currentTime);// 设置进度条
+        }
+        mCsbProgress.setMax((int) duration);
+        mTvCurrentTime.setText(toTime((int) currentTime));
+        mTvDurationTime.setText(toTime((int) duration));
 	}
 
 	/**

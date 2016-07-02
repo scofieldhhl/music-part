@@ -9,23 +9,22 @@ import java.util.List;
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
-import org.app.enjoy.music.util.AlbumImgUtil;
 import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.MovingTextView;
 import org.app.enjoy.musicplayer.R;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
-public class MusicListAdapter extends BaseAdapter {
+public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrollListener {
 	private String TAG = "MusicListAdapter";
 	private Context mcontext;// 上下文
 	private List<MusicData> musicDatas;
@@ -33,9 +32,15 @@ public class MusicListAdapter extends BaseAdapter {
 	private int currentLongPosition = -1;
 	private int currentMusicId  = -1;//当前播放音乐id
 	private boolean cancelLong;
+	private boolean isFirstEnter = true;//记录是否刚打开程序，用于解决进入程序不滚动屏幕，不会下载图片的问题。
+	private int mFirstVisibleItem;//一屏中第一个item的位置
+	private int mVisibleItemCount;//一屏中所有item的个数
+	private ListView mListView;
 //	private Typeface typeFace;
-	public MusicListAdapter(Context context) {
+	public MusicListAdapter(Context context,ListView listView) {
 		mcontext = context;
+		mListView = listView;
+		mListView.setOnScrollListener(this);
 		//经典细圆字体
 //		typeFace = Typeface.createFromAsset(mcontext.getAssets(), "fonts/DroidSansFallback.ttf");
 	}
@@ -45,9 +50,11 @@ public class MusicListAdapter extends BaseAdapter {
 	}
 
 	public void setCurrentPosition (int position) {
-		currentPosition = position;
-		currentMusicId = musicDatas.get(currentPosition).id;
-		notifyDataSetChanged();
+		if(musicDatas != null && musicDatas.size() > 0 && musicDatas.size() > position){
+			currentPosition = position;
+			currentMusicId = musicDatas.get(currentPosition).id;
+			notifyDataSetChanged();
+		}
 	}
 	public void setCurrentLongPosition (int position) {
 		currentLongPosition = position;
@@ -84,70 +91,24 @@ public class MusicListAdapter extends BaseAdapter {
 			viewholder.times = (TextView) convertView.findViewById(R.id.time);
 			viewholder.mIconRemove = (ImageView) convertView.findViewById(R.id.iv_remove);
 			viewholder.song_list_item_menu = (ImageButton) convertView.findViewById(R.id.ibtn_song_list_item_menu);
-			if (position % 2 == 0) {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_focus);
-				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_blue));
-			} else {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_unfocus);
-				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.dark_blue));
-			}
+
 			convertView.setTag(viewholder);
 		} else {
 			viewholder = (ViewHolder) convertView.getTag();
-		}
-//		viewholder.mTvPosition.setTypeface(typeFace);
-
-		MusicData data = musicDatas.get(position);
-		viewholder.mMtvTitle.setText(data.title);
-
-		String albumId = data.getAlbumId();
-		Bitmap bitmap;
-		if (!TextUtils.isEmpty(albumId)) {
-			bitmap = AlbumImgUtil.getArtwork(mcontext,data.getId(),Long.parseLong(albumId),false);
-			if (bitmap != null) {
-				viewholder.mCivAlbum.setImageBitmap(bitmap);
-			} else {
-				viewholder.mCivAlbum.setImageResource(R.drawable.default_album);
-			}
-		} else {
-			viewholder.mCivAlbum.setImageResource(R.drawable.default_album);
-		}
-
-		viewholder.singers.setText(data.artist);
-		if(data.duration > 0){
-			viewholder.times.setText(toTime(data.duration));
-		}else{
-			viewholder.times.setText("");
 		}
 
 		if (cancelLong) {
 			viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.white));
-//			viewholder.mIvLeft.setVisibility(View.VISIBLE);
 			viewholder.mIconRemove.setVisibility(View.GONE);
-			if (position % 2 == 0) {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_focus);
-				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_blue));
-			} else {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_unfocus);
-				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.dark_blue));
-			}
 		} else {
 			if (currentLongPosition == position) {
-				convertView.setBackgroundResource(R.drawable.bg_item_long_click);
 				viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.mIconRemove.setVisibility(View.VISIBLE);
 			} else {
-				if (position % 2 == 0) {
-//					viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_focus);
-					convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_blue));
-				} else {
-//					viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_unfocus);
-					convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.dark_blue));
-				}
 				viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.white));
 				viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
 				viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.white));
@@ -158,20 +119,47 @@ public class MusicListAdapter extends BaseAdapter {
 		if (currentPosition == position) {
 			viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
-//			viewholder.mIvLeft.setVisibility(View.VISIBLE);
 			viewholder.times.setVisibility(View.VISIBLE);
 			viewholder.mIconRemove.setVisibility(View.GONE);
 
 			convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_yellow));
 		} else {
-//			viewholder.mIvLeft.setVisibility(View.GONE);
 			if (position % 2 == 0) {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_focus);
 				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_blue));
 			} else {
-//				viewholder.mLayoutContent.setBackgroundResource(R.drawable.bg_lv_music_item_unfocus);
 				convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.dark_blue));
 			}
+		}
+
+		MusicData data = musicDatas.get(position);
+		viewholder.mMtvTitle.setText(data.title);
+		viewholder.mCivAlbum.setImageResource(R.drawable.default_album);
+
+		/*String albumId = data.getAlbumId();
+		Bitmap bitmap;
+		if (!TextUtils.isEmpty(albumId)) {
+			viewholder.mCivAlbum.setImageResource(R.drawable.default_album);
+			bitmap = imageDownLoader.showCacheBitmap(albumId);
+			if (bitmap != null) {
+				viewholder.mCivAlbum.setImageBitmap(bitmap);
+			} else {
+				final ViewHolder finalViewholder = viewholder;
+				imageDownLoader.getAlbumImage(mcontext, data.getId(), albumId, new ImageDownLoader.onImageLoaderListener() {
+					@Override
+					public void onImageLoader(Bitmap bitmap) {
+						if (bitmap != null) {
+							finalViewholder.mCivAlbum.setImageBitmap(bitmap);
+						}
+					}
+				});
+			}
+		}*/
+
+		viewholder.singers.setText(data.artist);
+		if(data.duration > 0){
+			viewholder.times.setText(toTime(data.duration));
+		}else{
+			viewholder.times.setText("");
 		}
 
 		viewholder.mIconRemove.setOnClickListener(new View.OnClickListener() {
@@ -194,9 +182,34 @@ public class MusicListAdapter extends BaseAdapter {
 				notifyDataSetChanged();
 			}
 		});
+
 		return convertView;
 
 	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		//仅当ListView静止时才去下载图片，ListView滑动时取消所有正在下载的任务
+		/*if(scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE){
+			showImage(mFirstVisibleItem, mVisibleItemCount);
+		}else{
+			cancelTask();
+		}*/
+	}
+
+	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+		/*mFirstVisibleItem = firstVisibleItem;
+		mVisibleItemCount = visibleItemCount;
+		// 因此在这里为首次进入程序开启下载任务。
+		if(isFirstEnter && visibleItemCount > 0){
+			showImage(mFirstVisibleItem, mVisibleItemCount);
+			isFirstEnter = false;
+		}*/
+	}
+
+
+
 	public class ViewHolder {
 		public CircleImageView mCivAlbum;
 		public MovingTextView mMtvTitle;
@@ -218,5 +231,4 @@ public class MusicListAdapter extends BaseAdapter {
 		/** 返回结果用string的format方法把时间转换成字符类型 **/
 		return String.format("%02d:%02d", minute, second);
 	}
-
 }

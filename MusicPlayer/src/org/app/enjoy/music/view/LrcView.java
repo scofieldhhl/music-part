@@ -81,6 +81,7 @@ public class LrcView extends View implements ILrcView{
 		final int height = getHeight(); // height of this view
 		final int width = getWidth() ; // width of this view
 		if(mLrcRows == null || mLrcRows.size() == 0){
+			mLoadingLrcTip = mContext.getString(R.string.lrc_no);
 			if(mLoadingLrcTip != null){
 				// draw tip when no lrc.
 				mPaint.setColor(mHignlightRowColor);

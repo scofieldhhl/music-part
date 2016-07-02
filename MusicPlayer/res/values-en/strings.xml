@@ -95,7 +95,7 @@
     <string name="play_lists"> Playlists </string>
         
     <string name="network_error"> network connection timed out .. Please check </string>
-
+    <string name="search_tip_no_find">No relevant songs were found</string>
     <string name="search_tip">please enter search key</string>
     <string name="slide_ctrl_tip">Left or Ritht Slide Switch</string>
         
@@ -117,4 +117,6 @@
     <string name="play_init_data"> init data ... </string>
     <string name="diy_custom">custom</string>
     <string name="diy_fav">favourite</string>
+
+    <string name="lrc_no">Not find the lyrics</string>
 </resources>

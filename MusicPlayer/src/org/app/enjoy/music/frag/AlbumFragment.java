@@ -16,6 +16,7 @@ import com.umeng.analytics.MobclickAgent;
 import org.app.enjoy.music.adapter.AlbumAdapter;
 import org.app.enjoy.music.data.AlbumData;
 import org.app.enjoy.music.data.MusicData;
+import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.Setting;
@@ -66,13 +67,6 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         super.onResume();
         initialize(view);
         initData();
-
-        // 设置皮肤背景
-        /*Setting setting = new Setting(getActivity(), false);
-        mLvAlbum.setBackgroundResource(setting.getCurrentSkinResId());//这里我只设置listview的皮肤而已。
-        MobclickAgent.onResume(getActivity());
-        Intent intentServer = new Intent(getActivity(), MusicService.class);
-        getActivity().startService(intentServer);*/
     }
 
     private void initialize (View view) {
@@ -90,16 +84,17 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         new Thread(){
             @Override
             public void run() {
-                HashMap<String,String> map = MusicUtil.getAllAlbum(getContext());
+                HashMap<String,MusicData> map = MusicUtil.getAllAlbum(getContext());
                 Iterator it = map.entrySet().iterator();
                 while (it.hasNext()) {
                     Map.Entry entry = (Map.Entry) it.next();
                     String key = (String) entry.getKey();
-                    String value = (String) entry.getValue();
+                    MusicData value = (MusicData) entry.getValue();
 
                     AlbumData info = new AlbumData();
                     info.setAlbumId(key);
-                    info.setAlbum(value);
+                    info.setMusic(value);
+                    info.setAlbum(value.album);
                     albumList.add(info);
                 }
                 mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_ALBUM_LIST);
@@ -131,15 +126,23 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
             if (albumAdapter != null) {
                 albumAdapter.setCurrentPosition(position);
             }
+            play(musicDatas);
+//            Bundle bundle = new Bundle();
+//            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+//            bundle.putInt(Contsant.POSITION_KEY, 0);
+//
+//            Intent intent = new Intent();
+//            intent.setAction(Contsant.PlayAction.MUSIC_LIST);
+//            intent.putExtras(bundle);
+//            getActivity().sendBroadcast(intent);
+
             Bundle bundle = new Bundle();
             bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.MUSIC_LIST_ITEM_CLICK);
             bundle.putInt(Contsant.POSITION_KEY, 0);
+            DataObservable.getInstance().setData(bundle);
 
-            Intent intent = new Intent();
-            intent.setAction(Contsant.PlayAction.MUSIC_LIST);
-            intent.putExtras(bundle);
-            getActivity().sendBroadcast(intent);
-            play(musicDatas);
+
         }
     }
 }

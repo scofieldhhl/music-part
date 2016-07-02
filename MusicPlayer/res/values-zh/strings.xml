@@ -48,7 +48,7 @@
     <string name="please_enter_time_delay">请输入几分钟</string>
     <string name="play_lists">Playlists</string>
     <string name="network_error">网络连接超时..请检查</string>
-
+    <string name="search_tip_no_find">没找到相关的音乐</string>
     <string name="search_tip">请输入搜索关键字</string>
     <string name="slide_ctrl_tip">左右横滑可切换上下首</string>
 
@@ -68,4 +68,6 @@
     <string name="play_init_data">正在初始化数据... </string>
     <string name="diy_custom">自定义</string>
     <string name="diy_fav">我的最爱</string>
+
+    <string name="lrc_no">没有找到歌词！</string>
 </resources>

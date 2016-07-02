@@ -6,4 +6,5 @@ package org.app.enjoy.music.data;
 public class ArtistData {
     public String artist;
     public String artistId;
+    public MusicData music;
 }

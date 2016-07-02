@@ -12,21 +12,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.Toast;
 
 import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.adapter.MusicListAdapter;
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
-import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.LogTool;
-import org.app.enjoy.music.tool.Menu;
-import org.app.enjoy.music.tool.Setting;
 import org.app.enjoy.music.tool.XfDialog;
 import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.music.util.SharePreferencesUtil;
@@ -48,27 +42,14 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
 
     private String TAG = "MusicListFragment";
     private View view;
-    private ImageButton mIbRight;
     /*** 音乐列表 **/
     private ListView mLvSongs;
-    private Menu xmenu;//自定义菜单
     private LayoutInflater inflater;//装载布局
     private ViewGroup.LayoutParams params;
-    private Toast toast;//提示
-    /**铃声标识常量**/
-    public static final int Ringtone = 0;
-    public static final int Alarm = 1;
-    public static final int Notification = 2;
     private int currentPosition = -1;
-    private int lastLongClickPosition = -1;
     private MusicListAdapter musicListAdapter;
     private List<MusicData> musicDatas = new ArrayList<MusicData>();
-    private String[] mArrSongs;
-    private PopupWindow popupWindow;
-    private long mSeekPosition = 0L;
-
-    private int currentMusicId = -1;//当前播放音乐id
-    private boolean isMusicRemove;//是否有音乐被移除
+    private int currentPlayFrag;//当前播放的Fragment
 
     Handler mHandler = new Handler(){
         @Override
@@ -78,8 +59,14 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                     if (musicDatas != null && musicDatas.size() > 0) {
                         if (musicListAdapter != null) {
                             if (currentPosition != -1) {
-                                musicListAdapter.setDatas(musicDatas);
-                                musicListAdapter.setCurrentPosition(currentPosition);
+                                //处理当前播放是其他fragment而用户又切换到了播放列表
+                                if (currentPlayFrag == 0) {
+                                    musicListAdapter.setDatas(musicDatas);
+                                    musicListAdapter.setCurrentPosition(currentPosition);
+                                } else {
+                                    musicListAdapter.setDatas(musicDatas);
+                                    musicListAdapter.notifyDataSetChanged();
+                                }
                             }
 
                             Bundle bundle = new Bundle();
@@ -96,16 +83,15 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                     }
 
                     break;
-//                case Contsant.Msg.UPDATE_PLAY_LIST_EXTENSION:
-//                    if (musicListAdapter != null){
-//                        musicListAdapter.setDatas(musicDatas);
-//                        musicListAdapter.notifyDataSetChanged();
-//                    }
-//                    break;
-                case Contsant.Msg.PLAY_CUE:
-//					if(mCueSongBeanList != null && mCueSongBeanList.size() > 0){
-////						initPopWindow(mCueSongBeanList);
-//					}
+                case Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED:
+                    if (musicDatas != null && musicDatas.size() > 0) {
+                        if (musicListAdapter != null) {
+                            if (currentPosition != -1) {
+                                musicListAdapter.setDatas(musicDatas);
+                                musicListAdapter.setCurrentPosition(currentPosition);
+                            }
+                        }
+                    }
                     break;
             }
         }
@@ -119,14 +105,13 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
 
     private void initialize (View view) {
         DataObservable.getInstance().addObserver(this);
-        mIbRight = (ImageButton) view.findViewById(R.id.ib_right);
         mLvSongs = (ListView) view.findViewById(R.id.local_music_list);
         mLvSongs.setOnItemClickListener(this);
         mLvSongs.setOnItemLongClickListener(this);
         inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
-        musicListAdapter = new MusicListAdapter(getContext());
+        musicListAdapter = new MusicListAdapter(getContext(),mLvSongs);
         musicListAdapter.setDatas(musicDatas);
         mLvSongs.setAdapter(musicListAdapter);
 
@@ -137,6 +122,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
      * 而_path存放音乐文件的路径（删除文件时会用到）。
      */
     private void initData () {
+        currentPlayFrag = SharePreferencesUtil.getInt(getContext(),Contsant.CURRENT_FRAG);
         List<MusicData> musicList = MusicUtil.getAllSongs(getContext());
         musicDatas.addAll(musicList);
         mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
@@ -159,13 +145,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                 GetFiles(getSDPath(),arrExtension, true);
             }
         }.start();
-
-        /*// 设置皮肤背景
-        Setting setting = new Setting(getActivity(), false);
-        mLvSongs.setBackgroundResource(setting.getCurrentSkinResId());//这里我只设置listview的皮肤而已。
-        MobclickAgent.onResume(getActivity());
-        Intent intentServer = new Intent(getActivity(), MusicService.class);
-        getActivity().startService(intentServer);*/
     }
 
     public void onPause() {
@@ -178,17 +157,16 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
      */
     public void playMusic(int position, long seekPosition) {
         if (musicDatas.size() > 0) {
-            play(position);
-
-            Intent intent = new Intent(getActivity(),PlayMusicActivity.class);
+            LogTool.i("play---startService");
+            Intent intent = new Intent();
             Bundle bundle = new Bundle();
             bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
             bundle.putInt(Contsant.POSITION_KEY, position);
-            bundle.putLong(Contsant.SEEK_POSITION, seekPosition);
-            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.PLAY_MUSIC);
             intent.putExtras(bundle);
-            DataObservable.getInstance().setData(bundle);
-            DataObservable.getInstance().setData(Contsant.Action.GOTO_MUSIC_PLAY_FRAG);//进入播放fragmengt
+            intent.setAction("com.app.media.MUSIC_SERVICE");
+            intent.putExtra("op", Contsant.PlayStatus.PLAY);// 向服务传递数据
+            intent.setPackage(getActivity().getPackageName());
+            getActivity().startService(intent);
         } else {
             final XfDialog xfdialog = new XfDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.tip)).
                     setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).
@@ -196,32 +174,24 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             xfdialog.show();
         }
     }
-    public void play(int position) {
-        LogTool.i("play---startService");
-        Intent intent = new Intent();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-        bundle.putInt(Contsant.POSITION_KEY, position);
-        intent.putExtras(bundle);
-        intent.setAction("com.app.media.MUSIC_SERVICE");
-        intent.putExtra("op", 1);// 向服务传递数据
-        intent.setPackage(getActivity().getPackageName());
-        getActivity().startService(intent);
-
-    }
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
         SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_LIST_FRAG);
         playMusic(position, 0);
         currentPosition = position;
-        currentMusicId = musicDatas.get(position).id;
         if (musicListAdapter != null) {
             musicListAdapter.cancelLongClick(true);
         }
         if (musicListAdapter != null && currentPosition != -1) {
             musicListAdapter.setCurrentPosition(currentPosition);
-            sendBroadcast(currentPosition);
+//            sendBroadcast(currentPosition);
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.MUSIC_LIST_ITEM_CLICK);
+            bundle.putInt(Contsant.POSITION_KEY, currentPosition);
+            DataObservable.getInstance().setData(bundle);
+
         }
 
 
@@ -230,7 +200,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
 
     @Override
     public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
-        lastLongClickPosition = position;
         if (musicListAdapter != null) {
             musicListAdapter.cancelLongClick(false);
             musicListAdapter.setCurrentLongPosition(position);
@@ -246,15 +215,12 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             int action = bundle.getInt(Contsant.ACTION_KEY);
             int position = bundle.getInt(Contsant.POSITION_KEY);
 
-            //如果有音乐被移除
-            if (action == Contsant.Action.REMOVE_MUSIC) {
-                isMusicRemove = true;
-            } else if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
+            if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
                 if(position < musicDatas.size()) {
                     if (((MusicActivity) getActivity()).getCurrentPage() == 0) {
                         if (currentPosition != position) {
                             currentPosition = position;
-                            mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
+                            mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
                         }
                     }
                 }
