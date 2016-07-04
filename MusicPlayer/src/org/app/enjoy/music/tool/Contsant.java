@@ -45,6 +45,7 @@ public class Contsant {
 	public static final String MUSIC_INFO_SAMPLERATE = "music_sample_rate";
 	public static final String MUSIC_INFO_BITRATE = "music_bit_rate";
 	public static final String MUSIC_INFO_DURATION = "music_duration";
+	public static final String CURRENT_MUSIC_ID = "current_music_id";
 
 	public static class Msg {
 		public static final int UPDATE_PLAY_LIST =                 0x101;

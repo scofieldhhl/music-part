@@ -93,7 +93,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                 }
                             } else {
                                 if (currentPosition != -1) {
-                                    checkMusicPosition();
+//                                    checkMusicPosition();
                                     musicListAdapter.setDatas(musicDatas);
                                     musicListAdapter.setCurrentPosition(currentPosition);
                                 }
@@ -355,8 +355,6 @@ Log.e(TAG,"onResume().......................");
                 int position = getPositionByMusicId();
                 if (position != -1) {
                     currentPosition = position;
-                } else {
-//                currentPosition = 0;
                 }
             }
         }

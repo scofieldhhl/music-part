@@ -64,7 +64,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     private String[] titles = { "All Songs", "Artist","Album", "PlayLists"};
     private List<MusicData> musicDatas = new ArrayList<>();
     private int currentPosition = -1;
-    private int currentMusicId  = -1;//当前播放音乐id
+//    private int currentMusicId  = -1;//当前播放音乐id
     private int isPlaying;//后台发过来的播放状态
     private CategoryPopWindow categoryPopWindow;
 
@@ -164,7 +164,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         Log.e(TAG,"showPlayInfo()......");
         if (musicDatas != null && musicDatas.size() > 0) {
             if (currentPosition < musicDatas.size() && currentPosition != -1) {
-                currentMusicId = musicDatas.get(currentPosition).id;
+                int currentMusicId = musicDatas.get(currentPosition).id;
+                SharePreferencesUtil.putInt(this,Contsant.CURRENT_MUSIC_ID,currentMusicId);
                 mMtvTitle.setText(musicDatas.get(currentPosition).title);
                 if (MusicService.flag == 1){
                     playStatus = Contsant.PlayStatus.PLAY;
@@ -237,9 +238,10 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                         }
                     }
                     play();
-                } else if(isClick){
-                    startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
-                    finish();
+                }else if(isClick){
+                    if(currentPosition < musicDatas.size() && currentPosition != -1){
+                        playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
+                    }
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -307,8 +309,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 break;
             case R.id.l_play_bottom:
                 LogTool.d("l_play_bottom:");
-                startActivity(new Intent(MusicActivity.this, MusicPlayActivity.class));
-                finish();
+                playMusic(currentPosition, musicDatas.get(currentPosition).seekPostion);
                 break;
         }
     }
@@ -323,12 +324,14 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             if (action == Contsant.Action.UPDATE_MUSIC) {
                 if (position == -1) {
                     List<MusicData> musicList = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
-                    if (musicDatas != null) {
-                        musicDatas.clear();
-                        musicDatas.addAll(musicList);
-                        isMusicLoad = true;
-
-                        mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
+                    if (musicList != null && musicList.size() > 0) {
+                        if (musicDatas != null) {
+                            musicDatas.clear();
+                            musicDatas.addAll(musicList);
+                            isMusicLoad = true;
+//                            checkMusicPosition();
+                            mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
+                        }
                     }
                 }
             } else  if (action == Contsant.Action.MUSIC_LIST_ITEM_CLICK) {
@@ -340,10 +343,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                             musicDatas.addAll(musicList);
                         }
                     }
-                    if (getCurrentPage() != 0) {
-                        currentPosition = position;
-                        mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
-                    }
+                    currentPosition = position;
+                    mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
                 }
             } else if (action == Contsant.Action.MUSIC_STOP) {//后台发过来的播放位置改变前台同步改变
                 pause();
@@ -430,6 +431,27 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         }
     };
 
+    /**
+     * 根据Position播放音乐
+     */
+    public void playMusic(int position, long seekPosition) {
+        finish();
+        if (musicDatas.size() > 0) {
+            startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+            bundle.putInt(Contsant.POSITION_KEY, position);
+            Intent intent = new Intent();
+            intent.setAction(Contsant.PlayAction.MUSIC_LIST);
+            intent.putExtras(bundle);
+            sendBroadcast(intent);
+        } else {
+            final XfDialog xfdialog = new XfDialog.Builder(MusicActivity.this).setTitle(getResources().getString(R.string.tip)).
+                    setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).
+                    setPositiveButton(getResources().getString(R.string.confrim), null).create();
+            xfdialog.show();
+        }
+    }
 
     public int getCurrentPage () {
         if (viewPager != null) {
@@ -439,11 +461,41 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     }
 
     public int getCurrentMusicId () {
-        return currentMusicId;
+        return SharePreferencesUtil.getInt(this,Contsant.CURRENT_MUSIC_ID);
     }
 
     public boolean isMusicLoad () {
         return isMusicLoad;
     }
 
+    private int getPositionByMusicId () {
+        int position = -1;
+        if (musicDatas == null || musicDatas.size() == 0) {
+            return -1;
+        }
+        int currentMusicId = getCurrentMusicId();
+        if (currentMusicId != -1) {
+            for (int i=0;i<musicDatas.size();i++) {
+                if (currentMusicId == musicDatas.get(i).id) {
+                    position = i;
+                    break;
+                }
+            }
+        }
+        Log.e(TAG, "getPositionByMusicId-position = " + position);
+        return position;
+    }
+
+    private void checkMusicPosition () {
+        int playId = getCurrentMusicId();
+        if(currentPosition < musicDatas.size()){
+            int id = musicDatas.get(currentPosition).id;
+            if (id != playId &&  playId != -1) {
+                int position = getPositionByMusicId();
+                if (position != -1) {
+                    currentPosition = position;
+                }
+            }
+        }
+    }
 }
