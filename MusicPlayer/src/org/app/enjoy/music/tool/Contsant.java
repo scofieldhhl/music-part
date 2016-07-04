@@ -60,6 +60,7 @@ public class Contsant {
 		public static final int UPDATE_ALBUM_LIST =       0x111;
 		public static final int SEARCH_MUSIC_COMPLETE =       0x112;
 		public static final int UPDATE_SEEK_BAR =       0x113;
+		public static final int DELAY_CANCLE_TOAST =       0x114;
 	}
 
 	public static class Frag {

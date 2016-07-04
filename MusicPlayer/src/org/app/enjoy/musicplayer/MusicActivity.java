@@ -79,16 +79,6 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case Contsant.Action.GOTO_MUSIC_LIST_FRAG:
-//                    if (viewPager != null) {
-//                        viewPager.setCurrentItem(0);
-//                    }
-                    break;
-                case Contsant.Action.GOTO_MUSIC_PLAY_FRAG:
-//                    if (viewPager != null) {
-//                        viewPager.setCurrentItem(1);
-//                    }
-                    break;
                 case Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED:
                     showPlayInfo();
                     break;
@@ -131,6 +121,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         DataObservable.getInstance().addObserver(this);
         imageDownLoader = new ImageDownLoader(this);
         currentPlayFrag = SharePreferencesUtil.getInt(this,Contsant.CURRENT_FRAG);
+        currentPosition = SharePreferencesUtil.getInt(this,Contsant.MUSIC_INFO_POSTION);
         categoryPopWindow = new CategoryPopWindow(this);
 
         mIvSearch = (ImageView) findViewById(R.id.iv_search);
@@ -246,12 +237,9 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                         }
                     }
                     play();
-                }else if(isClick){
-//                    if(currentPosition < musicDatas.size() && currentPosition != -1){
-//                        playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
-                        startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
-                        finish();
-//                    }
+                } else if(isClick){
+                    startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
+                    finish();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -319,7 +307,6 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                 break;
             case R.id.l_play_bottom:
                 LogTool.d("l_play_bottom:");
-//                playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
                 startActivity(new Intent(MusicActivity.this, MusicPlayActivity.class));
                 finish();
                 break;
@@ -340,6 +327,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                         musicDatas.clear();
                         musicDatas.addAll(musicList);
                         isMusicLoad = true;
+
+                        mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
                     }
                 }
             } else  if (action == Contsant.Action.MUSIC_LIST_ITEM_CLICK) {
@@ -364,6 +353,13 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                         if (position != -1) {
                             musicDatas.remove(position);
                         }
+                    }
+                }
+            } else if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
+                if (position < musicDatas.size()) {
+                    if (currentPosition != position) {
+                        currentPosition = position;
+                        mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
                     }
                 }
             }
@@ -413,11 +409,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
      */
     private void registerMusicReceiver() {
         IntentFilter filter = new IntentFilter();
-//        filter.addAction(Contsant.PlayAction.MUSIC_LAST);
-//        filter.addAction(Contsant.PlayAction.MUSIC_NEXT);
-//        filter.addAction(Contsant.PlayAction.MUSIC_UPDATE);
         filter.addAction(Contsant.PlayAction.MUSIC_STOP);
-        filter.addAction(Contsant.PlayAction.MUSIC_CURRENT);
         filter.addAction(Contsant.PlayAction.PLAY_PAUSE_NEXT);
         registerReceiver(musicReceiver, filter);
 
@@ -429,38 +421,8 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-//            if (action.equals(Contsant.PlayAction.MUSIC_UPDATE)) {
-//                currentPosition = intent.getExtras().getInt("position");
-//                mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
-//            }
-//            else if (action.equals(Contsant.PlayAction.MUSIC_NEXT)) {
-//                currentPosition = intent.getExtras().getInt("position");
-//                mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
-//            }
-//            else if (action.equals(Contsant.PlayAction.MUSIC_LAST)) {
-//                currentPosition = intent.getExtras().getInt("position");
-//                mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
-//            }
-//            else if(action.equals(Contsant.PlayStatus.PAUSE)){
-//                mHandler.sendEmptyMessage(Contsant.PlayStatus.PAUSE);
-//            }
             if (action.equals(Contsant.PlayAction.MUSIC_STOP)) {
                 mHandler.sendEmptyMessage(Contsant.Action.MUSIC_STOP);
-            } else if (action.equals(Contsant.PlayAction.MUSIC_CURRENT)) {
-                int position = intent.getExtras().getInt(Contsant.MUSIC_INFO_POSTION);
-                if (currentPosition != position && isMusicLoad) {
-                    currentPosition = position;
-                    mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
-
-                    if (viewPagerAdapter != null) {
-                        if (viewPager.getCurrentItem() == 0 || viewPager.getCurrentItem() == 3 || viewPager.getCurrentItem() == 4) {
-                            Bundle bundle = new Bundle();
-                            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
-                            bundle.putInt(Contsant.POSITION_KEY, position);
-                            DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
-                        }
-                    }
-                }
             } else if(action.equals(Contsant.PlayAction.PLAY_PAUSE_NEXT)){
                 isPlaying = intent.getExtras().getInt("isPlaying");
                 mHandler.sendEmptyMessage(Contsant.Action.PLAY_PAUSE_MUSIC);
@@ -468,27 +430,6 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         }
     };
 
-    /**
-     * 根据Position播放音乐
-     */
-    /*public void playMusic(int position, long seekPosition) {
-        finish();
-        if (musicDatas.size() > 0) {
-            startActivity(new Intent(MusicActivity.this,MusicPlayActivity.class));
-            Bundle bundle = new Bundle();
-            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-            bundle.putInt(Contsant.POSITION_KEY, currentPosition);
-            Intent intent = new Intent();
-            intent.setAction(Contsant.PlayAction.MUSIC_LIST);
-            intent.putExtras(bundle);
-            sendBroadcast(intent);
-        } else {
-            final XfDialog xfdialog = new XfDialog.Builder(MusicActivity.this).setTitle(getResources().getString(R.string.tip)).
-                    setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).
-                    setPositiveButton(getResources().getString(R.string.confrim), null).create();
-            xfdialog.show();
-        }
-    }*/
 
     public int getCurrentPage () {
         if (viewPager != null) {
@@ -499,6 +440,10 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
     public int getCurrentMusicId () {
         return currentMusicId;
+    }
+
+    public boolean isMusicLoad () {
+        return isMusicLoad;
     }
 
 }

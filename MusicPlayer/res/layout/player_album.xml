@@ -4,21 +4,37 @@
     android:layout_height="fill_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
-
-    <FrameLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true">
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="@dimen/activity_vertical_margin">
+        android:padding="@dimen/activity_vertical_margin">
         <org.app.enjoy.music.view.CircleImageView
             android:id="@+id/iv_music_cd"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:src="@drawable/icon_music_cd"/>
-        </RelativeLayout>
+        <ImageView
+            android:id="@+id/iv_no_touch1"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/music_top"
+            android:layout_alignParentBottom="true"/>
+        <ImageView
+            android:id="@+id/iv_no_touch2"
+            android:layout_width="@dimen/music_top"
+            android:layout_height="match_parent"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"/>
+        <ImageView
+            android:id="@+id/iv_no_touch3"
+            android:layout_width="@dimen/music_top"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"/>
+    </RelativeLayout>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true">
         <org.app.enjoy.music.view.CircularSeekBar
             android:id="@+id/csb_progress"
             android:layout_width="match_parent"

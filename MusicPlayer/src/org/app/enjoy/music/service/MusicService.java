@@ -1,12 +1,14 @@
 package org.app.enjoy.music.service;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -20,6 +22,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -29,10 +32,12 @@ import org.app.enjoy.music.frag.MusicPlayFragment;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.LogTool;
+import org.app.enjoy.music.tool.XfDialog;
 import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -51,12 +56,12 @@ import tv.danmaku.ijk.media.player.pragma.DebugLog;
  * 在后台播放。直到用户把服务秒杀了。
  */
 public class MusicService extends Service implements MediaPlayer.OnCompletionListener,Observer {
+	public final int DELAY_CLOSE_TOAST = 500;
 	private static final String TAG = MusicService.class.getName();
 	/** 发送给服务一些Action */
 	private IMediaPlayer mp = null;
 	private Uri uri = null;
 	private int id = 10000;
-	private Handler handler = null;
 	private long currentTime;// 播放时间
 	private long duration;// 总时间
 	private DBHelper dbHelper = null;// 数据库对象
@@ -75,6 +80,47 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private String mMusicName, mMusicFormat;
 	private int mMa_data;//当前播放列表
 	private PowerManager.WakeLock mWakeLock;
+	private Toast mToast;
+
+	private Handler handler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+			final Intent intent = new Intent();
+			switch (msg.what) {
+				case Contsant.PlayStatus.STATE_PREPARED:
+					intent.setAction(Contsant.PlayAction.MUSIC_PREPARED);
+					currentTime =  mp.getCurrentPosition();
+					intent.putExtra("currentTime", currentTime);
+					sendBroadcast(intent);
+					handler.sendEmptyMessage(Contsant.PlayStatus.STATE_INFO);
+					break;
+				case Contsant.PlayStatus.STATE_INFO:
+					if(mp != null){
+						intent.setAction(Contsant.PlayAction.MUSIC_CURRENT);
+						currentTime =  mp.getCurrentPosition();
+						duration = mp.getDuration();
+						intent.putExtra("currentTime", currentTime);
+						broadCastMusicInfo(intent);
+					}
+					if(handler != null){
+						handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
+					}
+					break;
+				case Contsant.Action.PLAY_PAUSE_MUSIC:
+					LogTool.i("PLAY_PAUSE_MUSIC" + msg.arg1);
+					intent.setAction(Contsant.PlayAction.PLAY_PAUSE_NEXT);
+					intent.putExtra("isPlaying", msg.arg1);
+					sendBroadcast(intent);
+					break;
+				case Contsant.Msg.DELAY_CANCLE_TOAST:
+					if(mToast != null){
+						mToast.cancel();
+					}
+			}
+		}
+	};
+
 	@Override
 	public void onCreate() {
 		LogTool.i("onCreate");
@@ -178,9 +224,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		if(intent == null){
 			intent = new Intent();
 		}
-//		Bundle bundle = new Bundle();
-//		bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-//		intent.putExtras(bundle);
 		intent.putExtra(Contsant.CURRENT_FRAG, mMa_data);
 		intent.putExtra(Contsant.MUSIC_INFO_POSTION, position);
 		intent.putExtra(Contsant.MUSIC_INFO_NAME, mMusicName);
@@ -188,7 +231,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		intent.putExtra(Contsant.MUSIC_INFO_SAMPLERATE, mSampleRate);
 		intent.putExtra(Contsant.MUSIC_INFO_BITRATE, mBitRate);
 		intent.putExtra(Contsant.MUSIC_INFO_DURATION, duration);
-//		LogTool.d(position + mMusicName + mMusicFormat + mSampleRate);
 		sendBroadcast(intent);
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
@@ -271,6 +313,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		LogTool.i("onStartCommand");
+		if (intent == null)
+			return 0;
 		int startServiceFisrt = intent.getIntExtra(Contsant.START_SERVICE_FIRST, 0);
 		//LogTool.d("startServiceFisrt:" + startServiceFisrt + "position:" + position);
 		if(startServiceFisrt == 1){//首次启动拿上次播放记录
@@ -304,6 +348,11 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				LogTool.i(musicDatas.get(position).path);
 				if (!mPath.equalsIgnoreCase(musicDatas.get(position).path) || (musicDatas.get(position).seekPostion != 0 && position != prePosition)) {
 					mPath = musicDatas.get(position).path;
+					File file = new File(mPath);
+					if(!file.exists()){
+						Toast.makeText(mContext, R.string.file_no_exist, Toast.LENGTH_SHORT).show();
+						return 0;
+					}
 					try {
 						mp.reset();
 						mp.setDataSource(mPath);
@@ -326,7 +375,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				}
 			}
 			setup();
-			init();
 			if (position != -1) {
 				Intent intent1 = new Intent();
 				intent1.setAction(Contsant.PlayAction.MUSIC_LIST);
@@ -420,45 +468,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		}
 	}
 
-	/** 初始化来着*/
-	private void init() {
-		final Intent intent = new Intent();
-		if (handler == null) {
-			handler = new Handler() {
-				@Override
-				public void handleMessage(Message msg) {
-					super.handleMessage(msg);
-
-					switch (msg.what) {
-						case Contsant.PlayStatus.STATE_PREPARED:
-							intent.setAction(Contsant.PlayAction.MUSIC_PREPARED);
-							currentTime =  mp.getCurrentPosition();
-							intent.putExtra("currentTime", currentTime);
-							sendBroadcast(intent);
-							handler.sendEmptyMessage(Contsant.PlayStatus.STATE_INFO);
-							break;
-						case Contsant.PlayStatus.STATE_INFO:
-								if(mp != null){
-									intent.setAction(Contsant.PlayAction.MUSIC_CURRENT);
-									currentTime =  mp.getCurrentPosition();
-									intent.putExtra("currentTime", currentTime);
-									broadCastMusicInfo(intent);
-								}
-							if(handler != null){
-								handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
-							}
-							break;
-						case Contsant.Action.PLAY_PAUSE_MUSIC:
-							LogTool.i("PLAY_PAUSE_MUSIC"+msg.arg1);
-							intent.setAction(Contsant.PlayAction.PLAY_PAUSE_NEXT);
-							intent.putExtra("isPlaying", msg.arg1);
-							sendBroadcast(intent);
-					}
-				}
-			};
-		}
-	}
-
 	/** 初始化1*/
 	private void setup() {
 		try {
@@ -542,7 +551,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		handler.removeMessages(1);
 
 		setup();
-		init();
 		play();
 
 		Bundle bundle = new Bundle();
@@ -595,7 +603,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		}
 		handler.removeMessages(1);
 		setup();
-		init();
 		play();
 
 		Intent intent = new Intent();
@@ -755,22 +762,27 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			// TODO Auto-generated method stub
 			String action = intent.getAction();
 			LogTool.i(action);
+			String word = null;
 			if ("android.media.AUDIO_BECOMING_NOISY".equals(action)) {
 				if(intent.hasExtra("state")){
 					if(intent.getIntExtra("state", 0)==0){
 						pause();
-						Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_SHORT).show();
+						word = context.getResources().getString(R.string.headset_out);
 					}
 				}else{
 					pause();
-					Toast.makeText(context, context.getResources().getString(R.string.headset_out), Toast.LENGTH_SHORT).show();
-					Log.e(TAG, "!!!intent.hasExtra(state)");
+					word = context.getResources().getString(R.string.headset_out);
 				}
 			}else if ("android.intent.action.HEADSET_PLUG".equals(action)) {
 				if(intent.getIntExtra("state", 0)==1){
 					play();
-					Toast.makeText(context,context.getResources().getString(R.string.headset_in), Toast.LENGTH_SHORT).show();
+					word = context.getResources().getString(R.string.headset_in);
 				}
+			}
+			if(word != null && !TextUtils.isEmpty(word)){
+				mToast = Toast.makeText(context, word, Toast.LENGTH_LONG);
+				mToast.show();
+				handler.sendEmptyMessageDelayed(Contsant.Msg.DELAY_CANCLE_TOAST, DELAY_CLOSE_TOAST);
 			}
 		}
 	};
@@ -811,5 +823,18 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			}
 		}
 	}
-
+	public static void showToast(final Activity activity, final String word, final long time){
+		activity.runOnUiThread(new Runnable() {
+			public void run() {
+				final Toast toast = Toast.makeText(activity, word, Toast.LENGTH_LONG);
+				toast.show();
+				Handler handler = new Handler();
+				handler.postDelayed(new Runnable() {
+					public void run() {
+						toast.cancel();
+					}
+				}, time);
+			}
+		});
+	}
 }

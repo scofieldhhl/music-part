@@ -74,14 +74,17 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                     break;
                 case Contsant.Msg.SEARCH_MUSIC_COMPLETE:
                     if (musicDatas != null && musicDatas.size() > 0) {
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-                        bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
-                        bundle.putInt(Contsant.POSITION_KEY, -1);
-                        DataObservable.getInstance().setData(bundle);
+                        boolean isMusicLoad = ((MusicActivity)getActivity()).isMusicLoad();
+                        if (!isMusicLoad) {
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+                            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
+                            bundle.putInt(Contsant.POSITION_KEY, -1);
+                            DataObservable.getInstance().setData(bundle);
+                        }
                         if (musicListAdapter != null) {
                             //处理当前播放是其他fragment而用户又切换到了播放列表重新找到播放音乐的position
-                            if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG) {
+                            if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
                                 int index = getPositionByMusicId();
                                 if (index != -1) {
                                     currentPosition = index;
@@ -90,6 +93,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                 }
                             } else {
                                 if (currentPosition != -1) {
+                                    checkMusicPosition();
                                     musicListAdapter.setDatas(musicDatas);
                                     musicListAdapter.setCurrentPosition(currentPosition);
                                 }
@@ -137,6 +141,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
      */
     private void initData () {
         currentPlayFrag = SharePreferencesUtil.getInt(getContext(),Contsant.CURRENT_FRAG);
+        currentPosition = SharePreferencesUtil.getInt(getContext(),Contsant.MUSIC_INFO_POSTION);
         List<MusicData> musicList = MusicUtil.getAllSongs(getContext());
         musicDatas.addAll(musicList);
         mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
@@ -340,6 +345,21 @@ Log.e(TAG,"onResume().......................");
         }
         Log.e(TAG, "getPositionByMusicId-position = " + position);
         return position;
+    }
+
+    private void checkMusicPosition () {
+        int playId = ((MusicActivity)getActivity()).getCurrentMusicId();
+        if(currentPosition < musicDatas.size()){
+            int id = musicDatas.get(currentPosition).id;
+            if (id != playId &&  playId != -1) {
+                int position = getPositionByMusicId();
+                if (position != -1) {
+                    currentPosition = position;
+                } else {
+//                currentPosition = 0;
+                }
+            }
+        }
     }
 
 

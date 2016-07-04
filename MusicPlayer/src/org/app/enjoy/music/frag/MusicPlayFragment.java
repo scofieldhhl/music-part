@@ -135,6 +135,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private List<MusicData> mMusicDatasNull = new ArrayList<>();
     private boolean isCatchLog = false;
     private boolean isSeeking = false;
+    private ImageView mIvNoTouch1, mIvNoTouch2, mIvNoTouch3;
 
     private Handler mHandler = new Handler(){
         @Override
@@ -242,6 +243,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		mTvCurrentTime = (TextView) view.findViewById(R.id.tv_current_time);
 		mTvDurationTime = (TextView) view.findViewById(R.id.tv_duration_time);
         mCsbProgress = (CircularSeekBar) view.findViewById(R.id.csb_progress);
+        mIvNoTouch1 = (ImageView)view.findViewById(R.id.iv_no_touch1);
+        mIvNoTouch2 = (ImageView)view.findViewById(R.id.iv_no_touch2);
+        mIvNoTouch3 = (ImageView)view.findViewById(R.id.iv_no_touch3);
+        mIvNoTouch1.setOnTouchListener(this);
+        mIvNoTouch2.setOnTouchListener(this);
+        mIvNoTouch3.setOnTouchListener(this);
         mIbBack.setOnClickListener(this);
         mIbVoice.setOnClickListener(this);
         mIbPre.setOnClickListener(this);
@@ -629,7 +636,9 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		filter.addAction(Contsant.PlayAction.PLAY_PAUSE_NEXT);
         filter.addAction(Contsant.PlayAction.MUSIC_LIST);
         filter.addAction("notifi.update");
-        getActivity().registerReceiver(musicReceiver, filter);
+        if(getActivity() != null && musicReceiver != null){
+            getActivity().registerReceiver(musicReceiver, filter);
+        }
     }
     /**在后台MusicService里使用handler消息机制，不停的向前台发送广播，广播里面的数据是当前mp播放的时间点，
      * 前台接收到广播后获得播放时间点来更新进度条,暂且先这样。但是一些人说虽然这样能实现。但是还是觉得开个子线程不错**/
@@ -721,20 +730,27 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                 musicDatas = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
             }
         }
-//        LogTool.d("info:" + position+mMusicName +duration + mMusicFormat + mSimpleRate);
+//        LogTool.d("info:" + position +"duration:" +duration);
     }
 
-
-    /**
-     * 播放时间转换
+    /*
+     * 毫秒转化时分秒毫秒
      */
-    public String toTime(int time) {
+    public static String formatTime(Long ms) {
+        Integer ss = 1000;
+        Integer mi = ss * 60;
+        Integer hh = mi * 60;
+        Integer dd = hh * 24;
 
-        time /= 1000;
-        int minute = time / 60;
-        int second = time % 60;
-        minute %= 60;
-        return String.format("%02d:%02d", minute, second);
+        Long day = ms / dd;
+        Long hour = (ms - day * dd) / hh;
+        Long minute = (ms - day * dd - hour * hh) / mi;
+        Long second = (ms - day * dd - hour * hh - minute * mi) / ss;
+        if(hour > 0) {
+            return String.format("%02d:%02d:%02d",hour, minute, second);
+        }else{
+            return String.format("%02d:%02d", minute, second);
+        }
     }
 
     @Override
@@ -826,7 +842,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
 		} else if (i == R.id.ib_balance) {
 			mHandler.sendEmptyMessage(Contsant.Msg.PLAY_LRC_SWITCH);
-
 		}
 	}
 
@@ -916,8 +931,9 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 			} else if (MotionEvent.ACTION_UP == motionEvent.getAction()) {
 				play();
 			}
-
-		}
+		}else if( i == R.id.iv_no_touch1 ||  i == R.id.iv_no_touch2 ||  i == R.id.iv_no_touch3){
+            return true;
+        }
 		return true;
 	}
 
@@ -1072,8 +1088,8 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
             mCsbProgress.setProgress((int) currentTime);// 设置进度条
         }
         mCsbProgress.setMax((int) duration);
-        mTvCurrentTime.setText(toTime((int) currentTime));
-        mTvDurationTime.setText(toTime((int) duration));
+        mTvCurrentTime.setText(formatTime(currentTime));
+        mTvDurationTime.setText(formatTime( duration));
 	}
 
 	/**

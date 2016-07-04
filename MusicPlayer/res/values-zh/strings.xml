@@ -70,4 +70,5 @@
     <string name="diy_fav">我的最爱</string>
 
     <string name="lrc_no">没有找到歌词！</string>
+    <string name="file_no_exist">文件不存在！</string>
 </resources>
