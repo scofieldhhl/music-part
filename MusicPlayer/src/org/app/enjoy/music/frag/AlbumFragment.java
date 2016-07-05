@@ -67,6 +67,12 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         super.onResume();
         initialize(view);
         initData();
+        MobclickAgent.onResume(getActivity());
+    }
+
+    public void onPause() {
+        super.onPause();
+        MobclickAgent.onPause(getActivity());
     }
 
     private void initialize (View view) {

@@ -150,7 +150,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     @Override
     public void onResume() {
         super.onResume();
-Log.e(TAG,"onResume().......................");
+        Log.e(TAG, "onResume().......................");
         if (musicDatas != null) {
             musicDatas.clear();
         }
@@ -164,8 +164,9 @@ Log.e(TAG,"onResume().......................");
                 searchFiles(getSDPath());
             }
         }.start();
+        MobclickAgent.onResume(getActivity());
     }
-
+    @Override
     public void onPause() {
         super.onPause();
         MobclickAgent.onPause(getActivity());

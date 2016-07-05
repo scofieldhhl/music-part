@@ -106,6 +106,10 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 					if(handler != null){
 						handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
 					}
+					if(mToast != null){
+						mToast.cancel();
+						mToast = null;
+					}
 					break;
 				case Contsant.Action.PLAY_PAUSE_MUSIC:
 					LogTool.i("PLAY_PAUSE_MUSIC" + msg.arg1);
@@ -116,6 +120,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 				case Contsant.Msg.DELAY_CANCLE_TOAST:
 					if(mToast != null){
 						mToast.cancel();
+						mToast = null;
 					}
 			}
 		}
@@ -751,6 +756,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private void registerHeadsetPlugReceiver(){
 		IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 		intentFilter.addAction("android.intent.action.HEADSET_PLUG");
+		intentFilter.addAction("android.media.AUDIO_BECOMING_NOISY");
 		registerReceiver(headsetPlugReceiver, intentFilter);
 	}
 
@@ -782,7 +788,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			if(word != null && !TextUtils.isEmpty(word)){
 				mToast = Toast.makeText(context, word, Toast.LENGTH_LONG);
 				mToast.show();
-				handler.sendEmptyMessageDelayed(Contsant.Msg.DELAY_CANCLE_TOAST, DELAY_CLOSE_TOAST);
+				if(handler != null){
+					handler.sendEmptyMessageDelayed(Contsant.Msg.DELAY_CANCLE_TOAST, DELAY_CLOSE_TOAST);
+				}
 			}
 		}
 	};
