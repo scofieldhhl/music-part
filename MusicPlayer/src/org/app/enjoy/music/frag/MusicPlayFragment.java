@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
@@ -96,14 +97,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private long duration;// 总时间
 	private ImageView mIbBack,mIbBalance;
 	private CircleImageView mIvMusicCd;
-	private static final int STATE_PLAY = 1;// 播放状态设为1
-	private static final int STATE_PAUSE = 2;// 播放状态设为2
 
     public static int loop_flag = Contsant.LoopMode.LOOP_ALL;
     public static boolean random_flag = false;
     public static int[] randomIDs = null;
     public static int randomNum = 0;
-    private int flag;// 标记
+    private int flag = Contsant.PlayStatus.PAUSE;// 标记
     private TreeMap<Integer, LRCbean> lrc_map = new TreeMap<Integer, LRCbean>();// Treemap对象
     private AudioManager audioManager;
     private int maxVolume;// 最大音量
@@ -167,7 +166,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 					}
 					break;
 				case Contsant.Action.MUSIC_STOP:
-					flag = STATE_PAUSE;
+					flag = Contsant.PlayStatus.PAUSE;
 					closeAnim();
 //					mIvMusicCd.clearAnimation();
 					break;
@@ -196,7 +195,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_play,container, false);
-        flag = Contsant.PlayStatus.PLAY;
         initialize(view);
         return view;
     }
@@ -288,11 +286,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         cubeRightInBackAnimation = new CubeRightInBackAnimation();
         cubeRightInBackAnimation.setDuration(500);
         cubeRightInBackAnimation.setFillAfter(true);
-		if(musicDatas != null && musicDatas.size() > 0){
-			openAnim();
-		}else{
-			closeAnim();
-		}
+        if(flag == Contsant.PlayStatus.PLAY){
+            openAnim();
+        }else{
+            closeAnim();
+        }
         mFlingView = (FlingGalleryView)view.findViewById(R.id.fgv_player_main);
 		mFlingView.setDefaultScreen(0);
 		mTvlrcText = (TextView) view.findViewById(R.id.tv_player_lyric_info);
@@ -306,7 +304,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		});
 		mIvBgLrc = (ImageView) view.findViewById(R.id.iv_bg_lrc);
 
-        //异步检索其他音频文件
+        //异步检索歌词
         new Thread(){
             @Override
             public void run() {
@@ -325,6 +323,14 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
             intent.putExtra(Contsant.START_SERVICE_FIRST, 1);// 向服务传递数据
             intent.setPackage(getActivity().getPackageName());
             getActivity().startService(intent);
+        }else{
+            flag = Contsant.PlayStatus.PLAY;//认为是后台播放
+            LogTool.d("onActivityCreated" + flag);
+            if(flag == Contsant.PlayStatus.PLAY){
+                openAnim();
+            }else{
+                closeAnim();
+            }
         }
 
         if(!isServiceWork(getActivity(), "org.app.enjoy.music.service.LogService") && isCatchLog){
@@ -332,6 +338,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
             intent.setPackage(getActivity().getPackageName());
             getActivity().startService(intent);
         }
+        initMusicData();
     }
 
     private static MusicPlayFragment mInstance;
@@ -352,27 +359,16 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         if (musicDatas != null) {
             randomIDs = new int[musicDatas.size()];
         }
-        if(musicDatas != null && musicDatas.size() > 0){
-            openAnim();
-        }else{
-            closeAnim();
-        }
 	}
 
     private void openAnim () {
 		mIbFore.setVisibility(View.VISIBLE);
 		mIbPlay.setVisibility(View.GONE);
-//		mIbFore.setBackgroundResource(R.drawable.selector_btn_play_pause);
-//		mIbFore.startAnimation(cubeLeftOutAnimation);
-//		mIbPlay.startAnimation(cubeRightInAnimation);
     }
 
     private void closeAnim () {
 		mIbFore.setVisibility(View.GONE);
 		mIbPlay.setVisibility(View.VISIBLE);
-//		mIbFore.setBackgroundResource(R.drawable.selector_btn_play_play);
-//		mIbFore.startAnimation(cubeLeftOutBackAnimation);
-//		mIbPlay.startAnimation(cubeRightInBackAnimation);
 	}
 
 	/**
@@ -662,14 +658,12 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                     mTimer.schedule(mTask, 0, mPalyTimerDuration);
                 }
                 if(musicDatas == null || musicDatas.size() == 0){
-                    //异步检索其他音频文件
-                    new Thread(){
-                        @Override
-                        public void run() {
-                            initMusicData();
-                            GetMusicFiles(getSDPath(), arrMusicExtension, true);
-                        }
-                    }.start();
+
+                    if(mMusicName == null || TextUtils.isEmpty(mMusicName)){//没有获取上次播放记录时，自动播放第一首
+                        position = 0;
+                        musicDatas = mMusicDatasNull;
+                        play();
+                    }
                 }
             } else if (action.equals(Contsant.PlayAction.MUSIC_NEXT)) {
                 mHandler.sendEmptyMessage(Contsant.Action.NEXTONE_MUSIC);
@@ -705,11 +699,13 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private void initMusicData () {
         List<MusicData> musicList = MusicUtil.getAllSongs(getActivity());
         mMusicDatasNull.addAll(musicList);
-        if(mMusicName == null || TextUtils.isEmpty(mMusicName)){//没有获取上次播放记录时，自动播放第一首
-            position = 0;
-            musicDatas = mMusicDatasNull;
-            play();
-        }
+        //异步检索其他音频文件
+        new Thread(){
+            @Override
+            public void run() {
+                GetMusicFiles(getSDPath(), arrMusicExtension, true);
+            }
+        }.start();
         LogTool.d("initMusicData" + mMusicDatasNull.size());
     }
 
@@ -755,6 +751,16 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
     @Override
     public void onClick(View view) {
+        if(musicDatas == null || musicDatas.size() == 0){
+            musicDatas = mMusicDatasNull;
+            for(int j = 0; j < mMusicDatasNull.size(); j++){
+                MusicData music = mMusicDatasNull.get(j);
+                if(music != null && mMusicName.equalsIgnoreCase(music.getTitle())) {
+                    position = j;
+                    musicDatas = mMusicDatasNull;
+                }
+            }
+        }
         int i = view.getId();
         if (i == R.id.ib_back) {
             startActivity(new Intent(mContext, MusicActivity.class));
@@ -780,18 +786,14 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
 		} else if (i == R.id.ib_play) {
 			if (musicDatas != null && musicDatas.size() > 0) {
-				if (flag == STATE_PLAY) {
-//					closeAnim();
-//					mIvMusicCd.clearAnimation();
+				if (flag == Contsant.PlayStatus.PLAY) {
 					pause();
-				} else if (flag == STATE_PAUSE) {
-//					openAnim();
-//					mIvMusicCd.startAnimation(rotateAnim);
+				} else if (flag == Contsant.PlayStatus.PAUSE) {
 					play();
 				}
 			}else if(mMusicDatasNull != null && mMusicDatasNull.size() > 0){
                 LogTool.d("mMusicDatasNull != null && mMusicDatasNull.size() > 0");
-                for(int j = 0; j < mMusicDatasNull.size(); j++){
+                /*for(int j = 0; j < mMusicDatasNull.size(); j++){
                     MusicData music = mMusicDatasNull.get(j);
                     if(music != null && mMusicName.equalsIgnoreCase(music.getTitle())) {
                         position = j;
@@ -799,7 +801,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                         play();
                         return;
                     }
-                }
+                }*/
                 Toast.makeText(getActivity(), R.string.play_init_data,Toast.LENGTH_SHORT).show();
             }else {
                 Toast.makeText(getActivity(), R.string.play_init_data,Toast.LENGTH_SHORT).show();
@@ -807,13 +809,9 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 
 		} else if (i == R.id.ib_fore) {
 			if (musicDatas != null && musicDatas.size() > 0) {
-				if (flag == STATE_PLAY) {
-//					closeAnim();
-//					mIvMusicCd.clearAnimation();
+				if (flag == Contsant.PlayStatus.PLAY) {
 					pause();
-				} else if (flag == STATE_PAUSE) {
-//					openAnim();
-//					mIvMusicCd.startAnimation(rotateAnim);
+				} else if (flag == Contsant.PlayStatus.PAUSE) {
 					play();
 				}
 			}
