@@ -16,8 +16,7 @@
 
     <org.app.enjoy.music.view.CircleImageView
         android:id="@+id/civ_album"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        style="@style/item_cricle_img"
         android:src="@drawable/default_album"/>
     </LinearLayout>
     <LinearLayout

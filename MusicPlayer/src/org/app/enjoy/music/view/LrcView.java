@@ -101,6 +101,9 @@ public class LrcView extends View implements ILrcView{
 		// 3, draw rows below highlight row.
 
 		// 1 highlight row
+		if(mHignlightRow > mLrcRows.size()){
+			return;
+		}
 		String highlightText = mLrcRows.get(mHignlightRow).content;
 		int highlightRowY = height / 2 - mLrcFontSize;
 		mPaint.setColor(mHignlightRowColor);

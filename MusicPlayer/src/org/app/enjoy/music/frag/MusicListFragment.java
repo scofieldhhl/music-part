@@ -51,6 +51,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private int currentPosition = -1;
     private MusicListAdapter musicListAdapter;
     private List<MusicData> musicDatas = new ArrayList<MusicData>();
+    private List<MusicData> tmpList = new ArrayList<MusicData>();
     private int currentPlayFrag;//当前播放的Fragment
 
     Handler mHandler = new Handler(){
@@ -60,27 +61,23 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                 case Contsant.Msg.UPDATE_PLAY_LIST:
                     if (musicDatas != null && musicDatas.size() > 0) {
                         if (musicListAdapter != null) {
-                            if (currentPosition != -1) {
-                                musicListAdapter.setDatas(musicDatas);
-                                musicListAdapter.notifyDataSetChanged();
-                            }
+                            musicListAdapter.setDatas(musicDatas);
+                            musicListAdapter.notifyDataSetChanged();
                         }
-                    } else {
-                        final XfDialog xfdialog = new XfDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.tip)).
-                                setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).
-                                setPositiveButton(getResources().getString(R.string.confrim), null).create();
-                        xfdialog.show();
                     }
                     break;
                 case Contsant.Msg.SEARCH_MUSIC_COMPLETE:
-                    if (musicDatas != null && musicDatas.size() > 0) {
-                        boolean isMusicLoad = ((MusicActivity)getActivity()).isMusicLoad();
-                        if (!isMusicLoad) {
-                            Bundle bundle = new Bundle();
-                            bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
-                            bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
-                            bundle.putInt(Contsant.POSITION_KEY, -1);
-                            DataObservable.getInstance().setData(bundle);
+                    if (tmpList != null && tmpList.size() > 0) {
+                        musicDatas.addAll(tmpList);
+                        if (getActivity() != null) {
+                            boolean isMusicLoad = ((MusicActivity)getActivity()).isMusicLoad();
+                            if (!isMusicLoad) {
+                                Bundle bundle = new Bundle();
+                                bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+                                bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
+                                bundle.putInt(Contsant.POSITION_KEY, -1);
+                                DataObservable.getInstance().setData(bundle);
+                            }
                         }
                         if (musicListAdapter != null) {
                             //处理当前播放是其他fragment而用户又切换到了播放列表重新找到播放音乐的position
@@ -99,6 +96,11 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                 }
                             }
                         }
+                    } else {
+                        final XfDialog xfdialog = new XfDialog.Builder(getActivity()).setTitle(getResources().getString(R.string.tip)).
+                                setMessage(getResources().getString(R.string.dlg_not_found_music_tip)).
+                                setPositiveButton(getResources().getString(R.string.confrim), null).create();
+                        xfdialog.show();
                     }
                     break;
                 case Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED:
@@ -118,7 +120,21 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.music_list,container, false);
+        initialize(view);
         return view;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        initData();
+        //异步检索其他音频文件
+        new Thread(){
+            @Override
+            public void run() {
+                searchFiles(getSDPath());
+            }
+        }.start();
     }
 
     private void initialize (View view) {
@@ -151,19 +167,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     public void onResume() {
         super.onResume();
         Log.e(TAG, "onResume().......................");
-        if (musicDatas != null) {
-            musicDatas.clear();
-        }
-
-        initialize(view);
-        //异步检索其他音频文件
-        new Thread(){
-            @Override
-            public void run() {
-                initData();
-                searchFiles(getSDPath());
-            }
-        }.start();
         MobclickAgent.onResume(getActivity());
     }
     @Override
@@ -280,7 +283,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         }
         File[] files = new File(Path).listFiles();
 
-        if (files.length > 0) {
+        if (files != null && files.length > 0) {
             for (int i = 0; i < files.length; i++) {
                 File f = files[i];
                 if (f.isFile()) {
@@ -303,7 +306,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                     md.path = f.getPath();
                                     LogTool.i( f.getPath());
                                     md.size = String.valueOf(f.length());
-                                    musicDatas.add(md);
+                                    tmpList.add(md);
                                     break;
                                 }
                             }

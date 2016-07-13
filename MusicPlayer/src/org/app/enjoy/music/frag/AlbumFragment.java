@@ -1,6 +1,7 @@
 package org.app.enjoy.music.frag;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -8,20 +9,24 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.umeng.analytics.MobclickAgent;
 
-import org.app.enjoy.music.adapter.AlbumAdapter;
+import org.app.enjoy.music.adapter.BaseAddressExpandableListAdapter;
 import org.app.enjoy.music.data.AlbumData;
 import org.app.enjoy.music.data.MusicData;
+import org.app.enjoy.music.frag.base.ExpandableListFragment;
 import org.app.enjoy.music.mode.DataObservable;
-import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
-import org.app.enjoy.music.tool.Setting;
+import org.app.enjoy.music.tool.LogTool;
 import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.music.util.SharePreferencesUtil;
+import org.app.enjoy.music.view.LoadingDialog;
 import org.app.enjoy.musicplayer.R;
 
 import java.io.Serializable;
@@ -34,9 +39,14 @@ import java.util.Map;
 /**
  * Created by victor on 2016/6/12.
  */
-public class AlbumFragment extends Fragment implements AdapterView.OnItemClickListener{
-    private String TAG = "AlbumFragment";
-    private View view;
+public class AlbumFragment extends ExpandableListFragment {
+
+    @Override
+    public void setupFragmentData() {
+        mMa_data = Contsant.Frag.ALBUM_FRAG;
+    }
+
+    /*private View view;
     private ListView mLvAlbum;
 
     private AlbumAdapter albumAdapter;
@@ -108,10 +118,10 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
         }.start();
     }
 
-    /**
+    *//**
      * @param musicDatas
      * 从当前专辑第一首歌曲开始播放
-     */
+     *//*
     public void play(List<MusicData> musicDatas) {
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
@@ -150,5 +160,5 @@ public class AlbumFragment extends Fragment implements AdapterView.OnItemClickLi
 
 
         }
-    }
+    }*/
 }
