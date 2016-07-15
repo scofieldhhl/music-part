@@ -272,7 +272,7 @@ public class MusicPlayActivity extends BaseActivity implements View.OnClickListe
     @Override
     public boolean onMenuOpened(int featureId, android.view.Menu menu) {
         /** 菜单在哪里显示。参数1是该布局总的ID，第二个位置，第三，四个是XY坐标 **/
-        xmenu.showAtLocation(findViewById(R.id.rl_parent_cotent), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
+//        xmenu.showAtLocation(findViewById(R.id.rl_parent_cotent), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
         /** 如果返回true的话就会显示系统自带的菜单，反之返回false的话就显示自己写的。 **/
         return false;
     }

@@ -151,6 +151,7 @@ public abstract class ExpandableListFragment extends Fragment{
         expandableListView.setOnGroupClickListener(new ExpandableListView.OnGroupClickListener() {
             @Override
             public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
+                LogTool.d("setOnGroupClickListener：" + groupPosition);
                 if (childList[groupPosition] == null) {
                     AddressBookChildrenTask task = new AddressBookChildrenTask();
                     task.execute(Integer.toString(groupPosition));
@@ -179,6 +180,9 @@ public abstract class ExpandableListFragment extends Fragment{
                     bundle.putInt(Contsant.POSITION_KEY, childPosition);
                     DataObservable.getInstance().setData(bundle);
                 }
+                baseELAdapter.setmGroupPositionFocus(groupPosition);
+                baseELAdapter.setmChildPositionFocus(childPosition);
+                baseELAdapter.notifyDataSetChanged();
                 return true;
             }
         });
@@ -191,8 +195,6 @@ public abstract class ExpandableListFragment extends Fragment{
         }else{
             expandableListView.expandGroup(groupPosition);
             expandableListView.setSelectedGroup(groupPosition);
-            baseELAdapter.setmGroupPositionFocus(groupPosition);
-            baseELAdapter.notifyDataSetChanged();
         }
         for (int i = 0; i < baseELAdapter.getGroupCount(); i++) {
             if (parent.isGroupExpanded(i)) {

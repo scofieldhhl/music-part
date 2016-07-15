@@ -115,8 +115,8 @@
     <string name="mi_resolution"> Resolution </string>
 
     <string name="play_init_data"> init data ... </string>
-    <string name="diy_custom">custom</string>
-    <string name="diy_fav">favourite</string>
+    <string name="diy_custom">Custom</string>
+    <string name="diy_fav">Favourite</string>
 
     <string name="lrc_no">Not find the lyrics</string>
     <string name="file_no_exist">file does not exist！</string>

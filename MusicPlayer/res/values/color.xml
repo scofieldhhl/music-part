@@ -17,6 +17,7 @@
 
     <color name="purple_dark">#10001e</color>
     <color name="purple">#484891</color>
+    <color name="bg_item_group">#808ca0</color>
 
 
 </resources>

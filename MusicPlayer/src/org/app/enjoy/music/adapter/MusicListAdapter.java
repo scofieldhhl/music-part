@@ -9,6 +9,7 @@ import java.util.List;
 import org.app.enjoy.music.data.MusicData;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
+import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.MovingTextView;
 import org.app.enjoy.musicplayer.R;
@@ -169,6 +170,7 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 				bundle.putInt(Contsant.ACTION_KEY,Contsant.Action.REMOVE_MUSIC);
 				bundle.putInt(Contsant.POSITION_KEY, currentLongPosition);
 				DataObservable.getInstance().setData(bundle);
+				MusicUtil.deleteFile(mcontext,musicDatas.get(currentLongPosition).data,musicDatas.get(currentLongPosition).id);
 				musicDatas.remove(currentLongPosition);
 
 				currentLongPosition = -1;

@@ -87,12 +87,14 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                                     currentPosition = index;
                                     musicListAdapter.setDatas(musicDatas);
                                     musicListAdapter.setCurrentPosition(currentPosition);
+                                    mLvSongs.setSelection(currentPosition);
                                 }
                             } else {
                                 if (currentPosition != -1) {
 //                                    checkMusicPosition();
                                     musicListAdapter.setDatas(musicDatas);
                                     musicListAdapter.setCurrentPosition(currentPosition);
+                                    mLvSongs.setSelection(currentPosition);
                                 }
                             }
                         }

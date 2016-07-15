@@ -17,7 +17,7 @@
     <string name="skin_settings">皮肤设置</string>
     <string name="no_lrc_messenge">未找到歌词</string>
     <string name="about_title">关于</string>
-    <string name="about_message">作者:Tom scofield.hhl@gmail.com/烟熏的藏身处(巴士ID)\n,简要介绍:本播放器有基本功能，如基本播放+一些小功能，包括读歌词和读取专辑等。本作是前面几个版本强化。主要强化了后台播放功能</string>
+    <string name="about_message">作者:scofield.hhl@gmail.com\n,简要介绍:本播放器有基本功能，如基本播放+一些小功能，包括读歌词和读取专辑等。本作是前面几个版本强化。主要强化了后台播放功能</string>
     <string name="info">操作:</string>
     <string name="dialog_messenge">你确定要退出播放吗？</string>
     <string name="music_info">歌曲详细信息:</string>
@@ -65,7 +65,7 @@
   <string name="mi_pixel_format">像素格式为：</string>
   <string name="mi_resolution">分辨率</string>
 
-    <string name="play_init_data">正在初始化数据... </string>
+    <string name="play_init_data">正在加载数据... </string>
     <string name="diy_custom">自定义</string>
     <string name="diy_fav">我的最爱</string>
 

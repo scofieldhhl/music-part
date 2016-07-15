@@ -21,8 +21,6 @@ public class LoadingDialog extends Dialog  {
 		super(context, theme);
 	}
 
-
-
 	public static LoadingDialog createDialog(Context context){
 		customProgressDialog = new LoadingDialog(context,R.style.alertdialogstyle);
 		customProgressDialog.setContentView(R.layout.base_loading);

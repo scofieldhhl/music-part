@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.app.enjoy.musicplayer"
     android:installLocation="preferExternal"
-    android:versionCode="10705"
-    android:versionName="1.6.07052140">
+    android:versionCode="10713"
+    android:versionName="1.6.07132140">
 
     <uses-sdk
         android:minSdkVersion="10"

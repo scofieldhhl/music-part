@@ -37,6 +37,7 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
     private List[] mChildList;
     private Context mContext;
     private int mGroupPositionFocus = -1;
+    private int mChildPositionFocus = -1;
 
     public BaseAddressExpandableListAdapter(Context context,List<AlbumData> groupList, List[] childList){
         this.mContext = context;
@@ -47,7 +48,7 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
         // TODO Auto-generated method stub
-        if(mChildList[groupPosition]!=null){
+        if(mChildList[groupPosition]!=null && mChildList[groupPosition].size() > 0){
             return (mChildList[groupPosition]).get(childPosition);
         }
         return null;
@@ -81,6 +82,9 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
             convertView.setBackgroundColor(mContext.getResources().getColor(R.color.light_blue));
         } else {
             convertView.setBackgroundColor(mContext.getResources().getColor(R.color.dark_blue));
+        }
+        if(groupPosition == mGroupPositionFocus && childPosition == mChildPositionFocus){
+            convertView.setBackgroundColor(mContext.getResources().getColor(R.color.light_yellow));
         }
 
         MusicData data = (MusicData)getChild(groupPosition,childPosition);
@@ -130,6 +134,7 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
             convertView = LayoutInflater.from(mContext).inflate(R.layout.lv_album_item, null);
             viewholder.mTvTitle = (TextView) convertView.findViewById(R.id.tv_title);
             viewholder.mCivAlbum = (CircleImageView) convertView.findViewById(R.id.civ_album);
+            viewholder.mIvExpand = (ImageView) convertView.findViewById(R.id.iv_expand);
             convertView.setTag(viewholder);
         } else {
             viewholder = (ViewHolder) convertView.getTag();
@@ -156,12 +161,11 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
                         viewholder.mCivAlbum.setImageDrawable(circularBitmapDrawable);
                     }
                 });
-        if (mGroupPositionFocus != -1 && groupPosition == mGroupPositionFocus && isExpanded) {
-            convertView.setBackgroundResource(R.drawable.controls_tableview_groupbackground_collapse);
+        if (isExpanded) {
+            viewholder.mIvExpand.setImageResource(R.drawable.item_expand);
         } else {
-            convertView.setBackgroundResource(R.drawable.controls_tableview_groupbackground_collapse);
+            viewholder.mIvExpand.setImageResource(R.drawable.item_unexpand);
         }
-
         return convertView;
     }
 
@@ -201,9 +205,18 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
         this.mGroupPositionFocus = mGroupPositionFocus;
     }
 
+    public int getmChildPositionFocus() {
+        return mChildPositionFocus;
+    }
+
+    public void setmChildPositionFocus(int mChildPositionFocus) {
+        this.mChildPositionFocus = mChildPositionFocus;
+    }
+
     public class ViewHolder {
         public CircleImageView mCivAlbum;
         private TextView mTvTitle;
+        private ImageView mIvExpand;
     }
 
     public class ViewGroupHolder {

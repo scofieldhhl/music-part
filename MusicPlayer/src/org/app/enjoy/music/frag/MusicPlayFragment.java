@@ -132,7 +132,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
     private XfDialog popupWindow;
     private int mMa_data;//当前播放列表
     private List<MusicData> mMusicDatasNull = new ArrayList<>();
-    private boolean isCatchLog = false;
+    private boolean isCatchLog = true;
     private boolean isSeeking = false;
     private ImageView mIvNoTouch1, mIvNoTouch2, mIvNoTouch3;
 
