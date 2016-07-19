@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.RandomAccessFile;
@@ -64,7 +65,7 @@ public class CueUtil {
         boolean parseSong = false;
         int songIndex = 0;
         try {
-            reader = new LineNumberReader( new InputStreamReader(new FileInputStream(cueFile),"GB2312"));
+            reader = new LineNumberReader( new InputStreamReader(new FileInputStream(cueFile),Contsant.CHAR_ENCODING));
             while (true) {
                 String s = new String();
                 s = reader.readLine();
@@ -95,6 +96,103 @@ public class CueUtil {
                        if(arrBegin != null && arrBegin.length > 1){
                            cueMusic.setIndexBegin(arrBegin[1].trim());
                        }
+                    }
+                    if(songIndex > 1 && s.trim().toUpperCase().startsWith("INDEX")){
+
+                        if(s.trim().contains(" 00 ")){
+                            cueMusicList.get(songIndex - 2).setIndexEnd(s.trim().split(" 00 ")[1].trim());
+                        }
+                        if(s.trim().contains(" 01 ")){
+                            String[] arrBegin =s.trim().split(" 01 ");
+                            if(arrBegin != null && arrBegin.length > 1){
+                                cueMusic.setIndexBegin(arrBegin[1].trim());
+                            }
+//                            cueMusic.setIndexBegin(s.trim().split(" 01 ")[1].trim());
+                            int size = cueMusicList.size();
+                            if(size > 0){
+                                cueMusicList.get(size - 1).setDuration((int)(getLongFromTime(cueMusic.getIndexBegin()) - seekPosition));
+                            }
+                            seekPosition = getLongFromTime(cueMusic.getIndexBegin()) + 1500;
+                            cueMusic.setSeekPostion(seekPosition);
+                        }
+                    }
+                    if(songIndex >= 1 && s.trim().toUpperCase().startsWith("INDEX") && s.trim().contains(" 01 ")){
+                        cueMusic.setPath(musicPlayPath);
+                        cueMusic.setAlbum(albumName);
+                        cueMusicList.add(cueMusic);
+                        cueMusic = new MusicData();
+                    }
+                }else{
+                    cueFileBean.setSongs(cueMusicList);
+                    break;
+                }
+            }
+
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "UnsupportedEncodingException:"+e.getMessage());
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "FileNotFoundException:"+e.getMessage());
+        }catch (IOException e) {
+            Log.e(TAG, "IOException:"+e.getMessage());
+        }finally{
+            try{
+                if(reader!=null ){
+                    reader.close();
+                }
+            }
+            catch(Exception e){
+                Log.e(TAG, "Exception:"+e.getMessage());
+            }
+        }
+        return cueFileBean;
+    }
+
+    /**
+     * parse cue file
+     * @param String file
+     * @return CueFileBean
+     */
+    public static CueFileBean parseCueFile(String cueIso, String musicPlayPath){
+        String albumName = "";
+        Long seekPosition = 0L;
+        LineNumberReader reader = null;
+        CueFileBean  cueFileBean = new CueUtil().new CueFileBean();
+        ArrayList<MusicData> cueMusicList = new ArrayList<MusicData>();
+        MusicData cueMusic = new MusicData();
+        boolean parseSong = false;
+        int songIndex = 0;
+        try {
+            reader = new LineNumberReader( new InputStreamReader(new FileInputStream(cueIso),Contsant.CHAR_ENCODING));
+            while (true) {
+                String s = new String();
+                s = reader.readLine();
+                if (s != null)
+                {
+                    if(!parseSong && s.trim().toUpperCase().startsWith("PERFORMER")){
+                        cueFileBean.setPerformer(s.substring(s.indexOf("\"") + 1, s.lastIndexOf("\"")));
+                    }
+                    if(!parseSong && s.trim().toUpperCase().startsWith("TITLE")){
+                        cueFileBean.setAlbumName(s.substring(s.indexOf("\"")+1, s.lastIndexOf("\"")));
+                        albumName = cueFileBean.getAlbumName();
+                    }
+                    if(s.trim().toUpperCase().startsWith("FILE")){
+                        cueFileBean.setFileName(s.substring(s.indexOf("\"")+1, s.lastIndexOf("\"")));
+                    }
+                    if(s.trim().toUpperCase().startsWith("TRACK")){
+                        parseSong = true;
+                        songIndex ++;
+                    }
+                    if(parseSong && s.trim().toUpperCase().startsWith("TITLE")){
+                        cueMusic.setTitle(s.substring(s.indexOf("\"")+1, s.lastIndexOf("\"")));
+                    }
+                    if(parseSong && s.trim().toUpperCase().startsWith("PERFORMER")){
+                        cueMusic.setArtist(s.substring(s.indexOf("\"")+1, s.lastIndexOf("\"")));
+                    }
+                    if(songIndex == 1 && s.trim().toUpperCase().startsWith("INDEX")){
+                        String[] arrBegin =s.trim().split(" 01 ");
+                        if(arrBegin != null && arrBegin.length > 1){
+                            cueMusic.setIndexBegin(arrBegin[1].trim());
+                        }
                     }
                     if(songIndex > 1 && s.trim().toUpperCase().startsWith("INDEX")){
 
@@ -211,6 +309,24 @@ public class CueUtil {
                 }
             }
         }
+        return musicDataList;
+    }
+
+    /**
+     * */
+    public static List<MusicData> getMusicsFromIso(String cueIso) {
+        ArrayList<MusicData> musicDataList = null;
+            Log.i(TAG, "cueIso" + cueIso);
+            CueFileBean cueFileBean = parseCueFile(cueFile, music.path);
+            musicDataList =  cueFileBean.getSongs();
+            int size = musicDataList.size();
+            if(size > 1){
+                long preSeekPoistion = musicDataList.get(size - 2).getSeekPostion();
+                long duration = musicDataList.get(size - 2).getDuration();
+                musicDataList.get(size - 1).setDuration(music.getDuration() - preSeekPoistion -duration);
+            }else if(size == 1){
+                musicDataList.get(size - 1).setDuration(music.getDuration());
+            }
         return musicDataList;
     }
 

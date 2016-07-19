@@ -19,6 +19,7 @@ import com.umeng.analytics.MobclickAgent;
 
 import org.app.enjoy.music.adapter.MusicListAdapter;
 import org.app.enjoy.music.data.MusicData;
+import org.app.enjoy.music.interfaces.ViewPagerOnPageChangeListener;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.LogTool;
@@ -42,7 +43,6 @@ import java.util.Observer;
 public class MusicListFragment extends Fragment implements AdapterView.OnItemClickListener,AdapterView.OnItemLongClickListener,Observer {
 
     private String TAG = "MusicListFragment";
-    private String[] arrExtension = new String[]{"dsf","dff","dst","dsd", "wma", "aif", "aac"};
     private View view;
     /*** 音乐列表 **/
     private ListView mLvSongs;
@@ -53,6 +53,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     private List<MusicData> musicDatas = new ArrayList<MusicData>();
     private List<MusicData> tmpList = new ArrayList<MusicData>();
     private int currentPlayFrag;//当前播放的Fragment
+
 
     Handler mHandler = new Handler(){
         @Override
@@ -69,20 +70,22 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                 case Contsant.Msg.SEARCH_MUSIC_COMPLETE:
                     if (tmpList != null && tmpList.size() > 0) {
                         musicDatas.addAll(tmpList);
+                    }
+                    if (musicDatas != null && musicDatas.size() > 0) {
                         if (getActivity() != null) {
                             boolean isMusicLoad = ((MusicActivity)getActivity()).isMusicLoad();
                             if (!isMusicLoad) {
                                 Bundle bundle = new Bundle();
                                 bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
                                 bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.UPDATE_MUSIC);
-                                bundle.putInt(Contsant.POSITION_KEY, -1);
+                                bundle.putInt(Contsant.POSITION_KEY, currentPosition);
                                 DataObservable.getInstance().setData(bundle);
                             }
                         }
                         if (musicListAdapter != null) {
                             //处理当前播放是其他fragment而用户又切换到了播放列表重新找到播放音乐的position
                             if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
-                                int index = getPositionByMusicId();
+                                int index = getPositionByMusicName();
                                 if (index != -1) {
                                     currentPosition = index;
                                     musicListAdapter.setDatas(musicDatas);
@@ -111,6 +114,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                             if (currentPosition != -1) {
                                 musicListAdapter.setDatas(musicDatas);
                                 musicListAdapter.setCurrentPosition(currentPosition);
+                                mLvSongs.setSelection(currentPosition);
                             }
                         }
                     }
@@ -129,12 +133,20 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        if (musicDatas != null) {
+            musicDatas.clear();
+        }
+        if (tmpList != null) {
+            tmpList.clear();
+        }
+
         initData();
         //异步检索其他音频文件
         new Thread(){
             @Override
             public void run() {
-                searchFiles(getSDPath());
+                searchFiles();
             }
         }.start();
     }
@@ -150,6 +162,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         musicListAdapter = new MusicListAdapter(getContext(),mLvSongs);
         musicListAdapter.setDatas(musicDatas);
         mLvSongs.setAdapter(musicListAdapter);
+
 
     }
 
@@ -248,7 +261,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                             currentPosition = position;
                         }
                         if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
-                            int index = getPositionByMusicId();
+                            int index = getPositionByMusicName();
                             if (index != -1) {
                                 currentPosition = index;
                             }
@@ -256,6 +269,18 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                         mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
                     }
                 }
+            }
+        } else if (data instanceof Integer) {
+            int currentFrag = (int) data;
+            if (currentFrag == Contsant.Frag.MUSIC_LIST_FRAG) {
+                currentPlayFrag = SharePreferencesUtil.getInt(getContext(),Contsant.CURRENT_FRAG);
+                if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
+                    int index = getPositionByMusicName();
+                    if (index != -1 && currentPosition != index) {
+                        currentPosition = index;
+                    }
+                }
+                mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
             }
         }
     }
@@ -266,10 +291,11 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         super.onDestroy();
     }
 
-    private void searchFiles (String path) {
+    private void searchFiles () {
         long currentTime = System.currentTimeMillis();
-        Log.e(TAG,"searchFiles()......start");
-        GetFiles(path);
+        Log.e(TAG, "searchFiles()......start");
+//        GetFiles(path);
+        MusicUtil.GetMusicFiles(MusicUtil.getSDPath(),true, tmpList);
         Log.e(TAG,"searchFiles()......end");
         Log.e(TAG, "searchFiles()......耗时=" + (System.currentTimeMillis() - currentTime));
         mHandler.sendEmptyMessage(Contsant.Msg.SEARCH_MUSIC_COMPLETE);
@@ -279,7 +305,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
      * 遍历文件夹，搜索指定扩展名的文件
      * isLastOne 是否是最后一条，true 则搜索最后一条记录完毕后通知list刷新数据
      * */
-    public void GetFiles(String Path) {  //搜索目录，扩展名，是否进入子文件夹
+    /*public void GetFiles(String Path) {  //搜索目录，扩展名，是否进入子文件夹
         if(Path == null || TextUtils.isEmpty(Path)){
             return;
         }
@@ -333,38 +359,38 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
         }else{
             return null;
         }
-    }
+    }*/
 
-    private int getPositionByMusicId () {
+    private int getPositionByMusicName () {
         int position = -1;
         if (musicDatas == null || musicDatas.size() == 0) {
             return -1;
         }
-        int currentMusicId = ((MusicActivity) getActivity()).getCurrentMusicId();
-        if (currentMusicId != -1) {
+        String currentMusicName = ((MusicActivity) getActivity()).getCurrentMusicName();
+        if (!TextUtils.isEmpty(currentMusicName)) {
             for (int i=0;i<musicDatas.size();i++) {
-                if (currentMusicId == musicDatas.get(i).id) {
+                if (currentMusicName.equals(musicDatas.get(i).title)) {
                     position = i;
                     break;
                 }
             }
         }
-        Log.e(TAG, "getPositionByMusicId-position = " + position);
+        Log.e(TAG, "getPositionByMusicName-position = " + position);
         return position;
     }
 
-    private void checkMusicPosition () {
-        int playId = ((MusicActivity)getActivity()).getCurrentMusicId();
-        if(currentPosition < musicDatas.size()){
-            int id = musicDatas.get(currentPosition).id;
-            if (id != playId &&  playId != -1) {
-                int position = getPositionByMusicId();
-                if (position != -1) {
-                    currentPosition = position;
-                }
-            }
-        }
-    }
+//    private void checkMusicPosition () {
+//        int playId = ((MusicActivity)getActivity()).getCurrentMusicId();
+//        if(currentPosition < musicDatas.size()){
+//            int id = musicDatas.get(currentPosition).id;
+//            if (id != playId &&  playId != -1) {
+//                int position = getPositionByMusicId();
+//                if (position != -1) {
+//                    currentPosition = position;
+//                }
+//            }
+//        }
+//    }
 
 
 }

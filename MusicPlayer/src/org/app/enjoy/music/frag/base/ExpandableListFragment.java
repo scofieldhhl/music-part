@@ -20,6 +20,7 @@ import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.music.tool.LogTool;
 import org.app.enjoy.music.util.MusicUtil;
+import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.music.view.LoadingDialog;
 import org.app.enjoy.musicplayer.R;
 
@@ -170,6 +171,7 @@ public abstract class ExpandableListFragment extends Fragment{
             @Override
             public boolean onChildClick(ExpandableListView expandableListView, View view, int groupPosition, int childPosition, long id) {
                 LogTool.d("groupPosition" + groupPosition + "childPosition"+ childPosition);
+                SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, mMa_data);
                 List<MusicData> musicDatas = childList[groupPosition];
                 if (musicDatas != null && musicDatas.size() > 0 && childPosition < musicDatas.size()) {
                     play(musicDatas, childPosition);

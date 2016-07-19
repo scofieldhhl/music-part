@@ -24,6 +24,7 @@ import org.app.enjoy.music.frag.ArtistFragment;
 import org.app.enjoy.music.frag.DiyFragment;
 import org.app.enjoy.music.frag.MusicListFragment;
 import org.app.enjoy.music.frag.SearchMusicFragment;
+import org.app.enjoy.music.interfaces.ViewPagerOnPageChangeListener;
 import org.app.enjoy.music.mode.DataObservable;
 import org.app.enjoy.music.service.MusicService;
 import org.app.enjoy.music.tool.Contsant;
@@ -149,6 +150,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         viewPagerAdapter.setTitles(titles);
         viewPagerAdapter.setFrags(frags);
         viewPager.setAdapter(viewPagerAdapter);
+
         tabs.setViewPager(viewPager);
         mCivAlbum = (CircleImageView) findViewById(R.id.civ_album);
         mMtvTitle = (MovingTextView) findViewById(R.id.mtv_title);
@@ -158,14 +160,15 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         mIvAdd.setOnClickListener(this);
         mLayoutPlayBottom.setOnTouchListener(this);
         mLayoutPlayBottom.setOnClickListener(this);
+
     }
 
     private void showPlayInfo () {
         Log.e(TAG,"showPlayInfo()......");
         if (musicDatas != null && musicDatas.size() > 0) {
             if (currentPosition < musicDatas.size() && currentPosition != -1) {
-                int currentMusicId = musicDatas.get(currentPosition).id;
-                SharePreferencesUtil.putInt(this,Contsant.CURRENT_MUSIC_ID,currentMusicId);
+                String currentMusicName = musicDatas.get(currentPosition).title;
+                SharePreferencesUtil.putString(this, Contsant.CURRENT_MUSIC_NAME, currentMusicName);
                 mMtvTitle.setText(musicDatas.get(currentPosition).title);
                 if (MusicService.flag == 1){
                     playStatus = Contsant.PlayStatus.PLAY;
@@ -322,13 +325,19 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
             int position = bundle.getInt(Contsant.POSITION_KEY);
 
             if (action == Contsant.Action.UPDATE_MUSIC) {
-                if (position == -1) {
+                if (position != -1) {
                     List<MusicData> musicList = (List<MusicData>) bundle.getSerializable(Contsant.MUSIC_LIST_KEY);
                     if (musicList != null && musicList.size() > 0) {
                         if (musicDatas != null) {
                             musicDatas.clear();
                             musicDatas.addAll(musicList);
                             isMusicLoad = true;
+                            currentPosition = position;
+
+                            int index = getPositionByMusicName();
+                            if (index != -1) {
+                                currentPosition = index;
+                            }
 //                            checkMusicPosition();
                             mHandler.sendEmptyMessage(Contsant.Msg.SHOW_BOTTOM_PLAY_INFO);
                         }
@@ -460,42 +469,42 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
         return 0;
     }
 
-    public int getCurrentMusicId () {
-        return SharePreferencesUtil.getInt(this,Contsant.CURRENT_MUSIC_ID);
+    public String getCurrentMusicName () {
+        return SharePreferencesUtil.getString(this, Contsant.CURRENT_MUSIC_NAME);
     }
 
     public boolean isMusicLoad () {
         return isMusicLoad;
     }
 
-    private int getPositionByMusicId () {
+    private int getPositionByMusicName () {
         int position = -1;
         if (musicDatas == null || musicDatas.size() == 0) {
             return -1;
         }
-        int currentMusicId = getCurrentMusicId();
-        if (currentMusicId != -1) {
+        String currentMusicNme = getCurrentMusicName();
+        if (!TextUtils.isEmpty(currentMusicNme)) {
             for (int i=0;i<musicDatas.size();i++) {
-                if (currentMusicId == musicDatas.get(i).id) {
+                if (currentMusicNme.equals(musicDatas.get(i).title)) {
                     position = i;
                     break;
                 }
             }
         }
-        Log.e(TAG, "getPositionByMusicId-position = " + position);
+        Log.e(TAG, "getPositionByMusicName-position = " + position);
         return position;
     }
 
-    private void checkMusicPosition () {
-        int playId = getCurrentMusicId();
-        if(currentPosition < musicDatas.size()){
-            int id = musicDatas.get(currentPosition).id;
-            if (id != playId &&  playId != -1) {
-                int position = getPositionByMusicId();
-                if (position != -1) {
-                    currentPosition = position;
-                }
-            }
-        }
-    }
+//    private void checkMusicPosition () {
+//        int playId = getCurrentMusicId();
+//        if(currentPosition < musicDatas.size()){
+//            int id = musicDatas.get(currentPosition).id;
+//            if (id != playId &&  playId != -1) {
+//                int position = getPositionByMusicId();
+//                if (position != -1) {
+//                    currentPosition = position;
+//                }
+//            }
+//        }
+//    }
 }

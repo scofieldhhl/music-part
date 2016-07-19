@@ -308,7 +308,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         new Thread(){
             @Override
             public void run() {
-                GetFiles(getSDPath(),arrExtension, true);
+                GetFiles(MusicUtil.getSDPath(),arrExtension, true);
             }
         }.start();
     }
@@ -703,7 +703,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         new Thread(){
             @Override
             public void run() {
-                GetMusicFiles(getSDPath(), arrMusicExtension, true);
+                MusicUtil.GetMusicFiles(MusicUtil.getSDPath(), true , mMusicDatasNull);
             }
         }.start();
         LogTool.d("initMusicData" + mMusicDatasNull.size());
@@ -1127,66 +1127,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		}
 	}
 
-    private String[] arrMusicExtension = new String[]{"dsf","dff","dst","dsd", "wma", "aif", "aac"};
-    public void GetMusicFiles(String Path, String[] arrExtension, boolean IsIterative)  //搜索目录，扩展名，是否进入子文件夹
-    {
-        if(Path == null || TextUtils.isEmpty(Path)){
-            return;
-        }
-        File[] files = new File(Path).listFiles();
-        if(files != null && files.length > 0){
-            for (int i = 0; i < files.length; i++){
-                File f = files[i];
-                if (f.isFile()){
-                    String[] arrFile = f.getPath().split("\\.");
-                    if(arrFile != null && arrFile.length >0){
-                        int length = arrFile.length;
-                        if(arrFile[length -1] != null){
-                            for(String str : arrExtension){
-                                if(arrFile[length -1].equalsIgnoreCase(str)){
-                                    MusicData md = new MusicData();
-                                    String[] arrFileName = f.getPath().split("/");
-                                    md.title = arrFile[length -1];
-                                    if(arrFileName != null && arrFileName.length > 0){
-                                        md.title = arrFileName[arrFileName.length - 1].substring(0,arrFileName[arrFileName.length - 1].indexOf("."));
-                                    }
-                                    md.duration = 0;
-                                    md.artist = "";
-                                    md.displayName = md.title;
-                                    md.data = f.getPath();
-                                    md.path = f.getPath();
-                                    LogTool.i( f.getPath());
-                                    md.size = String.valueOf(f.length());
-                                    mMusicDatasNull.add(md);
-                                    LogTool.d("GetMusicFiles:"+f.getPath());
-//                                mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_PLAY_LIST);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (!IsIterative)
-                        break;
-                }
-                else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)  //忽略点文件（隐藏文件/文件夹）
-                    GetMusicFiles(f.getPath(), arrMusicExtension, IsIterative);
-            }
-        }
-    }
 
-	public String getSDPath(){
-		File sdDir = null;
-		boolean sdCardExist = Environment.getExternalStorageState()
-				.equals(Environment.MEDIA_MOUNTED);   //判断sd卡是否存在
-		if(sdCardExist){
-			sdDir = Environment.getExternalStorageDirectory();//获取跟目录
-		}
-		if(sdDir != null){
-			return sdDir.toString();
-		}else{
-			return null;
-		}
-	}
 
 	private String getLrcPath(List<String> list, String pathName){
 		String path = "";

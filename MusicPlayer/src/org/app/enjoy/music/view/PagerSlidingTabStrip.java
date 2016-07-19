@@ -15,6 +15,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -24,6 +25,8 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.app.enjoy.music.mode.DataObservable;
+import org.app.enjoy.music.tool.Contsant;
 import org.app.enjoy.musicplayer.R;
 
 /**
@@ -390,6 +393,28 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			if (delegatePageListener != null) {
 				delegatePageListener.onPageSelected(position);
 			}
+			int currentFrag = Contsant.Frag.MUSIC_LIST_FRAG;
+			switch (position) {
+				case 0:
+					currentFrag = Contsant.Frag.MUSIC_LIST_FRAG;
+					break;
+				case 1:
+					currentFrag = Contsant.Frag.ARTIST_FRAG;
+					break;
+				case 2:
+					currentFrag =  Contsant.Frag.ALBUM_FRAG;
+					break;
+				case 3:
+					currentFrag =  Contsant.Frag.DIY_FRAG;
+					break;
+				case 4:
+					currentFrag =  Contsant.Frag.SEARCH_MUSIC_FRAG;
+					break;
+				default:
+					currentFrag = Contsant.Frag.MUSIC_LIST_FRAG;
+					break;
+			}
+			DataObservable.getInstance().setData(currentFrag);
 		}
 
 	}
