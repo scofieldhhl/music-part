@@ -1,1 +1,0 @@
-package org.app.enjoy.music.frag;import org.app.enjoy.music.frag.base.ExpandableListFragment;import org.app.enjoy.music.tool.Contsant;/** * Created by victor on 2016/6/12. */public class ArtistFragment extends ExpandableListFragment {    @Override    public void setupFragmentData() {        mMa_data = Contsant.Frag.ARTIST_FRAG;    }}
