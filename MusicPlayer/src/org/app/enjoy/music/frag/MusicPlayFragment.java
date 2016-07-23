@@ -9,10 +9,13 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
@@ -27,6 +30,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +51,7 @@ import org.app.enjoy.music.util.CubeLeftOutBackAnimation;
 import org.app.enjoy.music.util.CubeRightInAnimation;
 import org.app.enjoy.music.util.CubeRightInBackAnimation;
 import org.app.enjoy.music.util.MusicUtil;
+import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.music.view.CircleImageView;
 import org.app.enjoy.music.view.CircularSeekBar;
 import org.app.enjoy.music.view.DefaultLrcBuilder;
@@ -456,6 +461,11 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
         bundle.putInt(Contsant.POSITION_KEY, position);
         DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
+
+        //add by victor
+        SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_PLAY_FRAG);
+        SharePreferencesUtil.putString(mContext, Contsant.CURRENT_MUSIC_NAME, musicDatas.get(position).title);
+
         setup();
         play();
 
@@ -529,6 +539,10 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
         bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
         bundle.putInt(Contsant.POSITION_KEY, position);
         DataObservable.getInstance().setData(bundle);//通知播放列表播放位置改变
+
+        //add by victor
+        SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_PLAY_FRAG);
+        SharePreferencesUtil.putString(mContext, Contsant.CURRENT_MUSIC_NAME, musicDatas.get(position).title);
 
         setup();
         play();

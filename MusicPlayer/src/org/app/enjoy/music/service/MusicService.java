@@ -50,7 +50,7 @@ import tv.danmaku.ijk.media.player.misc.IjkMediaFormat;
  * 所有播放操作都交给服务,要服务就是为了实现后台播放,如果不用服务，那么一个界面关闭后，音乐也随着消失了。 但是用了服务这种情况不存在了。我们要做的永久
  * 在后台播放。直到用户把服务秒杀了。
  */
-public class MusicService extends Service implements MediaPlayer.OnCompletionListener,Observer {
+public class MusicService extends Service implements Observer {
 	public final int DELAY_CLOSE_TOAST = 500;
 	private static final String TAG = MusicService.class.getName();
 	/** 发送给服务一些Action */
@@ -76,6 +76,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	private int mMa_data;//当前播放列表
 	private PowerManager.WakeLock mWakeLock;
 	private Toast mToast;
+	private boolean isIsoComplete = false;
 
 	private Handler handler = new Handler() {
 		@Override
@@ -98,8 +99,9 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 						intent.putExtra("currentTime", currentTime);
 						broadCastMusicInfo(intent);
 						if(mPath != null && mPath.startsWith(Contsant.DSD_ISO_HEADER)){
-							if(currentTime >= duration){
+							if(currentTime >= duration && !isIsoComplete){
 								nextOne();
+								isIsoComplete = true;
 							}
 						}
 					}
@@ -122,6 +124,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 						mToast.cancel();
 						mToast = null;
 					}
+					break;
 			}
 		}
 	};
@@ -192,6 +195,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 			}
 			initAudioInfo();
 			saveLastPlayInfo();
+			isIsoComplete = false;
 		}
 	};
 
@@ -243,6 +247,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 	}
 	private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
 		public void onCompletion(IMediaPlayer mp) {
+			isIsoComplete = true;
 			LogTool.d("onCompletion");
 			nextOne();
 		}
@@ -562,7 +567,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
 		setup();
 		play();
-
+		SharePreferencesUtil.putInt(mContext, Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_PLAY_FRAG);
+		SharePreferencesUtil.putString(mContext, Contsant.CURRENT_MUSIC_NAME, musicDatas.get(position).title);
 		Bundle bundle = new Bundle();
 		bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
 		bundle.putInt(Contsant.POSITION_KEY, position);
@@ -607,6 +613,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		setup();
 		play();
 
+		SharePreferencesUtil.putInt(mContext, Contsant.CURRENT_FRAG, Contsant.Frag.MUSIC_PLAY_FRAG);
+		SharePreferencesUtil.putString(mContext, Contsant.CURRENT_MUSIC_NAME, musicDatas.get(position).title);
 		Intent intent = new Intent();
 		intent.setAction(Contsant.PlayAction.MUSIC_LIST);
 		intent.putExtra("position", position);
@@ -620,11 +628,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 		Intent intent2 = new Intent("com.app.musictitle");
 		intent2.putExtra("title", musicDatas.get(position).title);
 		sendBroadcast(intent2);
-	}
-
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		nextOne();
 	}
 
 	/** 操作数据库*/

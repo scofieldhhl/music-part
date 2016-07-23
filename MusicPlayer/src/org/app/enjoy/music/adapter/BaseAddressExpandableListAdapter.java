@@ -38,11 +38,13 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
     private Context mContext;
     private int mGroupPositionFocus = -1;
     private int mChildPositionFocus = -1;
+    public int mMa_data = Contsant.Frag.ALBUM_FRAG;//当前播放列表
 
-    public BaseAddressExpandableListAdapter(Context context,List<AlbumData> groupList, List[] childList){
+    public BaseAddressExpandableListAdapter(Context context,List<AlbumData> groupList, List[] childList, int flag){
         this.mContext = context;
         this.mGroupList = groupList;
         this.mChildList = childList;
+        this.mMa_data = flag;
     }
 
     @Override
@@ -165,6 +167,17 @@ public class BaseAddressExpandableListAdapter extends BaseExpandableListAdapter 
             viewholder.mIvExpand.setImageResource(R.drawable.item_expand);
         } else {
             viewholder.mIvExpand.setImageResource(R.drawable.item_unexpand);
+        }
+        switch (mMa_data){
+            case Contsant.Frag.ALBUM_FRAG:
+                convertView.setBackgroundResource(R.drawable.bg_item_group);
+                break;
+            case Contsant.Frag.ARTIST_FRAG:
+                convertView.setBackgroundResource(R.drawable.bg_item_group_artist);
+                break;
+            default:
+                convertView.setBackgroundResource(R.drawable.bg_item_group);
+                break;
         }
         return convertView;
     }

@@ -74,6 +74,7 @@ public class Contsant {
 		public static final int ALBUM_FRAG = 3;
 		public static final int DIY_FRAG = 4;
 		public static final int SEARCH_MUSIC_FRAG = 5;
+		public static final int MUSIC_PLAY_FRAG = 6;
 	}
 
 	public static class Action {

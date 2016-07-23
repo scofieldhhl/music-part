@@ -85,7 +85,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                         if (musicListAdapter != null) {
                             //处理当前播放是其他fragment而用户又切换到了播放列表重新找到播放音乐的position
                             if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
-                                int index = getPositionByMusicName();
+                                int index = MusicUtil.getPositionByMusicName(musicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
                                 if (index != -1) {
                                     currentPosition = index;
                                     musicListAdapter.setDatas(musicDatas);
@@ -261,7 +261,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
                             currentPosition = position;
                         }
                         if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
-                            int index = getPositionByMusicName();
+                            int index = MusicUtil.getPositionByMusicName(musicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
                             if (index != -1) {
                                 currentPosition = index;
                             }
@@ -275,7 +275,7 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             if (currentFrag == Contsant.Frag.MUSIC_LIST_FRAG) {
                 currentPlayFrag = SharePreferencesUtil.getInt(getContext(),Contsant.CURRENT_FRAG);
                 if (currentPlayFrag != Contsant.Frag.MUSIC_LIST_FRAG && currentPlayFrag != 0) {
-                    int index = getPositionByMusicName();
+                    int index = MusicUtil.getPositionByMusicName(musicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
                     if (index != -1 && currentPosition != index) {
                         currentPosition = index;
                     }
@@ -360,24 +360,6 @@ public class MusicListFragment extends Fragment implements AdapterView.OnItemCli
             return null;
         }
     }*/
-
-    private int getPositionByMusicName () {
-        int position = -1;
-        if (musicDatas == null || musicDatas.size() == 0) {
-            return -1;
-        }
-        String currentMusicName = ((MusicActivity) getActivity()).getCurrentMusicName();
-        if (!TextUtils.isEmpty(currentMusicName)) {
-            for (int i=0;i<musicDatas.size();i++) {
-                if (currentMusicName.equals(musicDatas.get(i).title)) {
-                    position = i;
-                    break;
-                }
-            }
-        }
-        Log.e(TAG, "getPositionByMusicName-position = " + position);
-        return position;
-    }
 
 //    private void checkMusicPosition () {
 //        int playId = ((MusicActivity)getActivity()).getCurrentMusicId();

@@ -22,6 +22,7 @@ import org.app.enjoy.music.tool.LogTool;
 import org.app.enjoy.music.util.MusicUtil;
 import org.app.enjoy.music.util.SharePreferencesUtil;
 import org.app.enjoy.music.view.LoadingDialog;
+import org.app.enjoy.musicplayer.MusicActivity;
 import org.app.enjoy.musicplayer.R;
 
 import java.io.Serializable;
@@ -30,11 +31,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by victor on 2016/6/12.
  */
-public abstract class ExpandableListFragment extends Fragment{
+public abstract class ExpandableListFragment extends Fragment implements Observer{
     private View view;
     public int mMa_data = Contsant.Frag.ALBUM_FRAG;//当前播放列表
 
@@ -44,9 +47,18 @@ public abstract class ExpandableListFragment extends Fragment{
             switch (msg.what) {
                 case Contsant.Msg.UPDATE_ALBUM_LIST:
                     childList = new ArrayList[albumList.size()];
-                    baseELAdapter = new BaseAddressExpandableListAdapter(getActivity(), albumList, childList);
+                    baseELAdapter = new BaseAddressExpandableListAdapter(getActivity(), albumList, childList, mMa_data);
                     expandableListView.setAdapter(baseELAdapter);
                     baseELAdapter.notifyDataSetChanged();
+                    break;
+                case Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED:
+                    if (baseELAdapter != null) {
+                        if (mCurrentPosition != -1) {
+                            baseELAdapter.setmChildPositionFocus(mCurrentPosition);
+                            baseELAdapter.setmGroupPositionFocus(mGroupPosition);
+                            baseELAdapter.notifyDataSetChanged();
+                        }
+                    }
                     break;
             }
         }
@@ -80,7 +92,14 @@ public abstract class ExpandableListFragment extends Fragment{
         MobclickAgent.onPause(getActivity());
     }
 
+    @Override
+    public void onDestroy() {
+        DataObservable.getInstance().deleteObserver(this);
+        super.onDestroy();
+    }
+
     private void initialize (View view) {
+        DataObservable.getInstance().addObserver(this);
         expandableListView = (ExpandableListView)view.findViewById(R.id.ag_addressbook_ELV);
         GroupClickListener();
         expandableListView.setDividerHeight(0);
@@ -170,21 +189,24 @@ public abstract class ExpandableListFragment extends Fragment{
         expandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView expandableListView, View view, int groupPosition, int childPosition, long id) {
-                LogTool.d("groupPosition" + groupPosition + "childPosition"+ childPosition);
+                LogTool.d("groupPosition" + groupPosition + "childPosition" + childPosition);
                 SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, mMa_data);
-                List<MusicData> musicDatas = childList[groupPosition];
-                if (musicDatas != null && musicDatas.size() > 0 && childPosition < musicDatas.size()) {
-                    play(musicDatas, childPosition);
+                mMusicDatas = childList[groupPosition];
+                if (mMusicDatas != null && mMusicDatas.size() > 0 && childPosition < mMusicDatas.size()) {
+                    mCurrentPosition = childPosition;
+                    mGroupPosition = groupPosition;
+                    play(mMusicDatas, childPosition);
 
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) musicDatas);
+                    bundle.putSerializable(Contsant.MUSIC_LIST_KEY, (Serializable) mMusicDatas);
                     bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.MUSIC_LIST_ITEM_CLICK);
                     bundle.putInt(Contsant.POSITION_KEY, childPosition);
                     DataObservable.getInstance().setData(bundle);
+
+                    baseELAdapter.setmGroupPositionFocus(groupPosition);
+                    baseELAdapter.setmChildPositionFocus(childPosition);
+                    baseELAdapter.notifyDataSetChanged();
                 }
-                baseELAdapter.setmGroupPositionFocus(groupPosition);
-                baseELAdapter.setmChildPositionFocus(childPosition);
-                baseELAdapter.notifyDataSetChanged();
                 return true;
             }
         });
@@ -270,4 +292,39 @@ public abstract class ExpandableListFragment extends Fragment{
     private int count_expand = 0;
     private int indicatorGroupHeight;
     private int indicatorGroupId = -1;
+    private List<MusicData> mMusicDatas;
+    private int mCurrentPosition;
+    private int mGroupPosition;
+
+    protected void updateFocus(Observable observable, Object data) {
+        LogTool.d("updateFocus");
+        if (data instanceof Bundle) {
+            Bundle bundle = (Bundle) data;
+            int action = bundle.getInt(Contsant.ACTION_KEY);
+            int position = bundle.getInt(Contsant.POSITION_KEY);
+            LogTool.d("updateFocus position:"+ position);
+            if (action == Contsant.Action.POSITION_CHANGED) {//后台发过来的播放位置改变前台同步改变
+                if (mCurrentPosition != position) {
+                    mCurrentPosition = position;
+                }
+                if (mMa_data != Contsant.Frag.MUSIC_LIST_FRAG && mMa_data != 0) {
+                    int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
+                    if (index != -1) {
+                        mCurrentPosition = index;
+                    }
+                }
+                mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+            }
+        } else if (data instanceof Integer) {
+            int currentFrag = (int) data;
+            LogTool.d("updateFocus currentFrag:"+ currentFrag);
+            if (currentFrag == Contsant.Frag.ALBUM_FRAG || currentFrag == Contsant.Frag.ARTIST_FRAG) {
+                int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
+                if (index != -1 && mCurrentPosition != index) {
+                    mCurrentPosition = index;
+                }
+                mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+            }
+        }
+    }
 }

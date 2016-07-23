@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
 
 /**
  * Created by victor on 2016/6/12.
@@ -46,6 +47,10 @@ public class AlbumFragment extends ExpandableListFragment {
         mMa_data = Contsant.Frag.ALBUM_FRAG;
     }
 
+    @Override
+    public void update(Observable observable, Object data) {
+        updateFocus(observable, data);
+    }
     /*private View view;
     private ListView mLvAlbum;
 
