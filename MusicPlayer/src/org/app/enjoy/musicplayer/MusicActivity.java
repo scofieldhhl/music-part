@@ -233,12 +233,13 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
                     }
                     //如果当前是播放列表MusicListFragment或者搜索SearchMusicFragment则通知播放位置发生改变同步更新UI
                     if (viewPagerAdapter != null) {
-                        if (viewPager.getCurrentItem() == 0 || viewPager.getCurrentItem() == 3 || viewPager.getCurrentItem() == 4) {
+//                        if (viewPager.getCurrentItem() == 0 || viewPager.getCurrentItem() == 3 || viewPager.getCurrentItem() == 4) {
+                            SharePreferencesUtil.putString(this,Contsant.CURRENT_MUSIC_NAME,musicDatas.get(currentPosition).title);
                             Bundle bundle = new Bundle();
                             bundle.putInt(Contsant.ACTION_KEY, Contsant.Action.POSITION_CHANGED);
                             bundle.putInt(Contsant.POSITION_KEY, currentPosition);
                             DataObservable.getInstance().setData(bundle);
-                        }
+//                        }
                     }
                     play();
                 }else if(isClick){

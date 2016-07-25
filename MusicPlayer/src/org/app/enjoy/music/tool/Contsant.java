@@ -48,6 +48,7 @@ public class Contsant {
 	public static final String MUSIC_INFO_BITRATE = "music_bit_rate";
 	public static final String MUSIC_INFO_DURATION = "music_duration";
 	public static final String CURRENT_MUSIC_NAME = "current_music_name";
+	public static final String CURRENT_PLAY_GROUP = "current_play_group";
 	public static final String CHAR_ENCODING = "GB2312";
 	public static final  int DELAY_SEEK_HEADER = 1500;
 

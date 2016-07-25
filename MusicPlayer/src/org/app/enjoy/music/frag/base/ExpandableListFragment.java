@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,17 +48,34 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
             switch (msg.what) {
                 case Contsant.Msg.UPDATE_ALBUM_LIST:
                     childList = new ArrayList[albumList.size()];
-                    baseELAdapter = new BaseAddressExpandableListAdapter(getActivity(), albumList, childList, mMa_data);
-                    expandableListView.setAdapter(baseELAdapter);
-                    baseELAdapter.notifyDataSetChanged();
+                    if (tmpChildList != null && tmpChildList.length > 0) {
+                        childList = tmpChildList;
+                        baseELAdapter = new BaseAddressExpandableListAdapter(getActivity(), albumList, childList, mMa_data);
+                        expandableListView.setAdapter(baseELAdapter);
+                        baseELAdapter.notifyDataSetChanged();
+                    }
+
+                    //add by victor
+                    if (childList != null && childList.length > 0 && mGroupPosition < childList.length) {
+                        mMusicDatas = childList[mGroupPosition];
+                        String currentMusicName = SharePreferencesUtil.getString(getContext(),Contsant.CURRENT_MUSIC_NAME);
+                        int index = MusicUtil.getPositionByMusicName(mMusicDatas,currentMusicName);
+                        if (mCurrentPosition != index) {
+                            mCurrentPosition = index;
+                            if (baseELAdapter != null) {
+                                baseELAdapter.setmChildPositionFocus(mCurrentPosition);
+                                baseELAdapter.setmGroupPositionFocus(mGroupPosition);
+                                baseELAdapter.notifyDataSetChanged();
+                            }
+                        }
+
+                    }
                     break;
                 case Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED:
                     if (baseELAdapter != null) {
-                        if (mCurrentPosition != -1) {
-                            baseELAdapter.setmChildPositionFocus(mCurrentPosition);
-                            baseELAdapter.setmGroupPositionFocus(mGroupPosition);
-                            baseELAdapter.notifyDataSetChanged();
-                        }
+                        baseELAdapter.setmChildPositionFocus(mCurrentPosition);
+                        baseELAdapter.setmGroupPositionFocus(mGroupPosition);
+                        baseELAdapter.notifyDataSetChanged();
                     }
                     break;
             }
@@ -114,6 +132,7 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
         new Thread(){
             @Override
             public void run() {
+                mGroupPosition = SharePreferencesUtil.getInt(getContext(), Contsant.CURRENT_PLAY_GROUP);
                 HashMap<String,MusicData> map;
                 switch (mMa_data){
                     case Contsant.Frag.ALBUM_FRAG:
@@ -144,6 +163,17 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
                     }
                     albumList.add(info);
                 }
+
+                switch (mMa_data) {
+                    case Contsant.Frag.ALBUM_FRAG:
+                        tmpChildList = new ArrayList[albumList.size()];
+                        tmpChildList[mGroupPosition] = MusicUtil.getSongByAlbum(getContext(), albumList.get(mGroupPosition).getAlbumId());
+                        break;
+                    case Contsant.Frag.ARTIST_FRAG:
+                        tmpChildList = new ArrayList[albumList.size()];
+                        tmpChildList[mGroupPosition] = MusicUtil.getSongsByArtist(getContext(), albumList.get(mGroupPosition).getAlbumId());
+                        break;
+                }
                 mHandler.sendEmptyMessage(Contsant.Msg.UPDATE_ALBUM_LIST);
             }
         }.start();
@@ -172,6 +202,7 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
             @Override
             public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
                 LogTool.d("setOnGroupClickListener：" + groupPosition);
+                mGroupPosition = groupPosition;
                 if (childList[groupPosition] == null) {
                     AddressBookChildrenTask task = new AddressBookChildrenTask();
                     task.execute(Integer.toString(groupPosition));
@@ -182,6 +213,20 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
                 }else{
                     setELVGroup(parent,groupPosition);
                 }
+
+                switch (mMa_data) {
+                    case Contsant.Frag.ALBUM_FRAG:
+                        mMusicDatas = MusicUtil.getSongByAlbum(getContext(), albumList.get(groupPosition).getAlbumId());
+                        break;
+                    case Contsant.Frag.ARTIST_FRAG:
+                        mMusicDatas = MusicUtil.getSongsByArtist(getContext(), albumList.get(groupPosition).getAlbumId());
+                        break;
+                }
+                if (mMusicDatas != null && mMusicDatas.size() > 0) {
+                    int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
+                    mCurrentPosition = index;
+                    mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+                }
                 return true;
             }
         });
@@ -191,6 +236,7 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
             public boolean onChildClick(ExpandableListView expandableListView, View view, int groupPosition, int childPosition, long id) {
                 LogTool.d("groupPosition" + groupPosition + "childPosition" + childPosition);
                 SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_FRAG, mMa_data);
+                SharePreferencesUtil.putInt(getContext(), Contsant.CURRENT_PLAY_GROUP, groupPosition);
                 mMusicDatas = childList[groupPosition];
                 if (mMusicDatas != null && mMusicDatas.size() > 0 && childPosition < mMusicDatas.size()) {
                     mCurrentPosition = childPosition;
@@ -286,6 +332,7 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
     }
     private List<AlbumData> albumList;
     private List<MusicData>[] childList;
+    private List<MusicData>[] tmpChildList;
     private ExpandableListView expandableListView;
     private BaseAddressExpandableListAdapter baseELAdapter = null;
     private LoadingDialog progressDialog=null;
@@ -309,21 +356,25 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
                 }
                 if (mMa_data != Contsant.Frag.MUSIC_LIST_FRAG && mMa_data != 0) {
                     int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
-                    if (index != -1) {
+                    if (mCurrentPosition != index) {
                         mCurrentPosition = index;
                     }
                 }
-                mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+                if (mMusicDatas != null && mMusicDatas.size() > 0) {
+                    mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+                }
             }
         } else if (data instanceof Integer) {
             int currentFrag = (int) data;
-            LogTool.d("updateFocus currentFrag:"+ currentFrag);
-            if (currentFrag == Contsant.Frag.ALBUM_FRAG || currentFrag == Contsant.Frag.ARTIST_FRAG) {
-                int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
-                if (index != -1 && mCurrentPosition != index) {
+            LogTool.d("updateFocus currentFrag:" + currentFrag);
+            if (mMusicDatas != null && mMusicDatas.size() > 0) {
+                if (currentFrag == Contsant.Frag.ALBUM_FRAG || currentFrag == Contsant.Frag.ARTIST_FRAG) {
+                    int index = MusicUtil.getPositionByMusicName(mMusicDatas, ((MusicActivity) getActivity()).getCurrentMusicName());
                     mCurrentPosition = index;
+                    mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
                 }
-                mHandler.sendEmptyMessage(Contsant.Msg.CURRENT_PLAY_POSITION_CHANGED);
+            } else {
+                Log.e("ExpandableListFragment","mMusicDatas == null or mMusicDatas.size == 0");
             }
         }
     }
