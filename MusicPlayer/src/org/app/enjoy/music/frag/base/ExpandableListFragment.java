@@ -167,10 +167,16 @@ public abstract class ExpandableListFragment extends Fragment implements Observe
                 switch (mMa_data) {
                     case Contsant.Frag.ALBUM_FRAG:
                         tmpChildList = new ArrayList[albumList.size()];
+                        if(tmpChildList == null && tmpChildList.length == 0){
+                           return;
+                        }
                         tmpChildList[mGroupPosition] = MusicUtil.getSongByAlbum(getContext(), albumList.get(mGroupPosition).getAlbumId());
                         break;
                     case Contsant.Frag.ARTIST_FRAG:
                         tmpChildList = new ArrayList[albumList.size()];
+                        if(tmpChildList == null && tmpChildList.length == 0){
+                            return;
+                        }
                         tmpChildList[mGroupPosition] = MusicUtil.getSongsByArtist(getContext(), albumList.get(mGroupPosition).getAlbumId());
                         break;
                 }

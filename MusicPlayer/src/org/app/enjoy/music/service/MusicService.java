@@ -148,6 +148,8 @@ public class MusicService extends Service implements Observer {
 			mp.setScreenOnWhilePlaying(true);
 			mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
 			mp.setWakeMode(MusicService.this, PowerManager.PARTIAL_WAKE_LOCK);
+
+			ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
 		} catch (Exception ex) {
 			Log.e(TAG, "Unable to open content: " + uri, ex);
 			return;
@@ -423,10 +425,19 @@ public class MusicService extends Service implements Observer {
 		}
 		if(path.startsWith(Contsant.DSD_ISO_HEADER)){//播放ISO前需要先调用
 			String isoPath = path.replace(Contsant.DSD_ISO_HEADER, "");
-			isoPath = isoPath.substring(0,isoPath.length()-4);
-			LogTool.d("isoPath:" + isoPath);
-			int flag = IjkMediaPlayer.native_opensacdisofile(isoPath, 0, 1, 0);
-			LogTool.d("native_opensacdisofile:"+flag);
+			String strIndex = path.substring(path.length() - 3,path.length());
+			LogTool.d("strIndex:" + strIndex);
+			try{
+				int songIndex = Integer.parseInt(strIndex.trim());
+				LogTool.d("strIndex:" + songIndex);
+				isoPath = isoPath.substring(0,isoPath.length() - 4);
+				LogTool.d("isoPath:" + isoPath);
+				int flag = IjkMediaPlayer.native_opensacdisofile(isoPath, 0, songIndex);
+				LogTool.d("native_opensacdisofile:" + flag);
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+
 		}else{
 			File file = new File(mPath);
 			if(!file.exists()){

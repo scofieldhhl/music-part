@@ -1111,30 +1111,32 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		}
 		File[] files = new File(Path).listFiles();
 
-		for (int i = 0; i < files.length; i++)
-		{
-			File f = files[i];
-			if (f.isFile())
-			{
-				String[] arrFile = f.getPath().split("\\.");
-				if(arrFile != null && arrFile.length >0){
-					int length = arrFile.length;
-					if(arrFile[length -1] != null){
-						for(String str : arrExtension){
-							if(arrFile[length -1].equalsIgnoreCase(str)){
-								LogTool.d(f.getPath());
-								mLrcPathlist.add(f.getPath());
-								break;
-							}
-						}
-					}
-				}
-				if (!IsIterative)
-					break;
-			}
-			else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)  //忽略点文件（隐藏文件/文件夹）
-				GetFiles(f.getPath(), arrExtension, IsIterative);
-		}
+		if(files != null && files.length > 0){
+            for (int i = 0; i < files.length; i++)
+            {
+                File f = files[i];
+                if (f.isFile())
+                {
+                    String[] arrFile = f.getPath().split("\\.");
+                    if(arrFile != null && arrFile.length >0){
+                        int length = arrFile.length;
+                        if(arrFile[length -1] != null){
+                            for(String str : arrExtension){
+                                if(arrFile[length -1].equalsIgnoreCase(str)){
+                                    LogTool.d(f.getPath());
+                                    mLrcPathlist.add(f.getPath());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!IsIterative)
+                        break;
+                }
+                else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)  //忽略点文件（隐藏文件/文件夹）
+                    GetFiles(f.getPath(), arrExtension, IsIterative);
+            }
+        }
 	}
 
 
