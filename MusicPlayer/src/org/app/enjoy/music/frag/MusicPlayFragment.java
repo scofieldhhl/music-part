@@ -870,7 +870,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		if(musicDatas != null && musicDatas.size() > 0){
 			seekbar_change(mPositionSeek);
             mHandler.sendEmptyMessageDelayed(Contsant.Msg.UPDATE_SEEK_BAR, DELAY_CHANGE_PROGRESS);
-			play();
+//			play();
 		}
 	}
 
@@ -878,7 +878,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	public void onStartTrackingTouch(CircularSeekBar seekBar) {
 		if(musicDatas != null && musicDatas.size() > 0){
 			mPositionSeek = 0;
-			pause();
+//			pause();
 		}
 	}
 

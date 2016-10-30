@@ -71,7 +71,7 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 
     private float xLast,yLast;
     private boolean isNext = false;//是否是下一曲
-    private boolean isClick = false;//判断是否是点击事件
+    private boolean isClick = true;//判断是否是点击事件
     private boolean isMusicLoad = false;//判断是否播放列表加载完毕
     private int currentPlayFrag;//当前播放的Fragment
     private ImageDownLoader imageDownLoader;
@@ -164,7 +164,6 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
     }
 
     private void showPlayInfo () {
-        Log.e(TAG,"showPlayInfo()......");
         if (musicDatas != null && musicDatas.size() > 0) {
             if (currentPosition < musicDatas.size() && currentPosition != -1) {
                 String currentMusicName = musicDatas.get(currentPosition).title;
@@ -242,9 +241,17 @@ public class MusicActivity extends BaseActivity implements View.OnClickListener,
 //                        }
                     }
                     play();
+                    isNext = false;
+                    isClick = true;
                 }else if(isClick){
                     if(currentPosition < musicDatas.size() && currentPosition != -1){
                         playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
+                        isClick = true;
+                    }
+                }else {
+                    if(currentPosition < musicDatas.size() && currentPosition != -1){
+                        playMusic(currentPosition,musicDatas.get(currentPosition).seekPostion);
+                        isClick = true;
                     }
                 }
                 break;
