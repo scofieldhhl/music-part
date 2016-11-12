@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.app.enjoy.musicplayer"
     android:installLocation="preferExternal"
-    android:versionCode="10713"
-    android:versionName="1.6.07132140">
+    android:versionCode="11112"
+    android:versionName="1.6.11121140">
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -106,6 +106,14 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.NoTitleBarTranslucent"/>
+
+        <activity android:name=".FileExplorerActivity"
+            android:launchMode="singleInstance"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
+            android:theme="@style/Theme.AppCompat"/>
 
         <provider
             android:name="org.app.enjoy.music.db.DataBaseContent"

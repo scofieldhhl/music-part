@@ -79,6 +79,15 @@
                 android:layout_alignParentRight="true"
                 android:scaleType="centerInside"
                 android:visibility="visible"/>
+            <ImageView
+                android:id="@+id/iv_location"
+                android:layout_width="30dp"
+                android:layout_height="35dp"
+                android:src="@drawable/ic_deep_clean_type_big"
+                android:layout_toLeftOf="@id/iv_remove"
+                android:layout_marginRight="@dimen/item_spacing"
+                android:scaleType="centerInside"
+                android:visibility="visible"/>
         </RelativeLayout>
     </LinearLayout>
 </LinearLayout>

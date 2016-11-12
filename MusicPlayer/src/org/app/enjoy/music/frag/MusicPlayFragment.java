@@ -9,13 +9,10 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
-import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
@@ -30,7 +27,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -169,7 +165,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 				case Contsant.Action.MUSIC_STOP:
 					flag = Contsant.PlayStatus.PAUSE;
 					closeAnim();
-//					mIvMusicCd.clearAnimation();
 					break;
 				case Contsant.Msg.PLAY_LRC_SWITCH:
 					int currentScreen = mFlingView.getCurrentScreen();
@@ -378,7 +373,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	public void play() {
 		if(musicDatas != null && musicDatas.size() > 0) {
 			LogTool.i("play---startService");
-//			mIvMusicCd.startAnimation(rotateAnim);
 			flag = Contsant.PlayStatus.PLAY;
 			Intent intent = new Intent();
 			Bundle bundle = new Bundle();
@@ -396,7 +390,6 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	 */
 	public void pause() {
 		if(musicDatas != null && musicDatas.size() > 0){
-//			mIvMusicCd.clearAnimation();
 			flag = Contsant.PlayStatus.PAUSE;
 			Intent intent = new Intent();
 			Bundle bundle = new Bundle();
@@ -662,7 +655,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
                 getInfoFromBroadcast(intent);
                 mHandler.sendEmptyMessage(Contsant.Action.DURATION_MUSIC);
                 if(mTimer == null){
-                    LogTool.d("mTimer == null");
+                    LogTool.d("LrcTask == null");
                     mTimer = new Timer();
                     mTask = new LrcTask();
                     mTimer.schedule(mTask, 0, mPalyTimerDuration);

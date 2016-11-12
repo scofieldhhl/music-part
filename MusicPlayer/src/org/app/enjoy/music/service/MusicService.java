@@ -77,6 +77,7 @@ public class MusicService extends Service implements Observer {
 	private PowerManager.WakeLock mWakeLock;
 	private Toast mToast;
 	private boolean isIsoComplete = false;
+	private boolean isHeadsetIn = true;
 
 	private Handler handler = new Handler() {
 		@Override
@@ -682,17 +683,7 @@ public class MusicService extends Service implements Observer {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getAction().equals(Intent.ACTION_ANSWER)) {
-				TelephonyManager telephonymanager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-				switch (telephonymanager.getCallState()) {
-					case TelephonyManager.CALL_STATE_RINGING:// 当有来电时候，暂停音乐，可我试了试，只是把声音降低而已
-						pause();
-						break;
-					case TelephonyManager.CALL_STATE_OFFHOOK:
-						play();
-						break;
-					default:
-						break;
-				}
+
 			}else if(intent.getAction().equals(Intent.ACTION_SHUTDOWN)){
 				saveLastPlayInfo();
 			}else if(intent.getAction().equals(Contsant.PlayAction.MUSIC_STOP_SERVICE)){
@@ -783,6 +774,7 @@ public class MusicService extends Service implements Observer {
 			if ("android.media.AUDIO_BECOMING_NOISY".equals(action)) {
 				if(intent.hasExtra("state")){
 					if(intent.getIntExtra("state", 0)==0){
+						isHeadsetIn = false;
 						pause();
 						word = context.getResources().getString(R.string.headset_out);
 					}
@@ -790,7 +782,7 @@ public class MusicService extends Service implements Observer {
 					pause();
 					word = context.getResources().getString(R.string.headset_out);
 				}
-			}else if ("android.intent.action.HEADSET_PLUG".equals(action)) {
+			}else if ("android.intent.action.HEADSET_PLUG".equals(action) && !isHeadsetIn) {
 				if(intent.getIntExtra("state", 0)==1){
 					play();
 					word = context.getResources().getString(R.string.headset_in);

@@ -285,7 +285,6 @@ public class CueUtil {
                         cueFileBean.setFileName(s.substring(s.indexOf("\"")+1, s.lastIndexOf("\"")));
                     }
                     if(s.trim().toUpperCase().startsWith("TRACK")){
-                        LogTool.d(s);
                         strIndexTrack = s.substring("TRACK ".length() + 2, "TRACK ".length() + 5);
                         parseSong = true;
                         songIndex ++;
@@ -301,24 +300,22 @@ public class CueUtil {
 
                         if(s.trim().contains(" 00 ")){
                             String[] arrBegin = s.trim().split(" 00 ");
-                            LogTool.d(s.trim());
                             if(arrBegin != null && arrBegin.length > 1){
                                 if(songIndex > 1){
                                     cueMusicList.get(songIndex - 2).setIndexEnd(arrBegin[1].trim());
                                 }
                                 cueMusic.setIndexBegin(arrBegin[1].trim());
-                                LogTool.d("setIndexBegin:" + arrBegin[1].trim());
+//                                LogTool.d("setIndexBegin:" + arrBegin[1].trim());
                             }
                         }else if(s.trim().contains(" 01 ")){
-                            LogTool.d(s.trim());
                             String[] arrEnd =s.trim().split(" 01 ");
                             if(arrEnd != null && arrEnd.length > 1){
                                 cueMusic.setIndexEnd(arrEnd[1].trim());
-                                LogTool.d("setIndexEnd:" + arrEnd[1].trim());
+//                                LogTool.d("setIndexEnd:" + arrEnd[1].trim());
                             }
                             if(musicPlayPath != null && musicPlayPath.endsWith(Contsant.DSD_ISO)){
                                 String trackPath = Contsant.DSD_ISO_HEADER + musicPlayPath + ":"+strIndexTrack;
-                                LogTool.d(Contsant.DSD_ISO+"trackPath:"+ trackPath);
+//                                LogTool.d(Contsant.DSD_ISO+"trackPath:"+ trackPath);
                                 cueMusic.setPath(trackPath);
                                 duration = getLongFromTime(cueMusic.getIndexEnd()) - getLongFromTime(cueMusic.getIndexBegin());
                                 cueMusic.setDuration(duration);

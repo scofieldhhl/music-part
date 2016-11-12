@@ -1,19 +1,7 @@
 package org.app.enjoy.music.adapter;
 
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
-import org.app.enjoy.music.data.MusicData;
-import org.app.enjoy.music.mode.DataObservable;
-import org.app.enjoy.music.tool.Contsant;
-import org.app.enjoy.music.util.MusicUtil;
-import org.app.enjoy.music.view.CircleImageView;
-import org.app.enjoy.music.view.MovingTextView;
-import org.app.enjoy.musicplayer.R;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +12,17 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import org.app.enjoy.music.data.MusicData;
+import org.app.enjoy.music.mode.DataObservable;
+import org.app.enjoy.music.tool.Contsant;
+import org.app.enjoy.music.util.MusicUtil;
+import org.app.enjoy.music.view.CircleImageView;
+import org.app.enjoy.music.view.MovingTextView;
+import org.app.enjoy.musicplayer.FileExplorerActivity;
+import org.app.enjoy.musicplayer.R;
+
+import java.util.List;
 
 public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrollListener {
 	private String TAG = "MusicListAdapter";
@@ -82,7 +81,7 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 
 	@Override
 	public View getView(final int position, View convertView, ViewGroup parent) {
-		ViewHolder viewholder = null;
+		ViewHolder viewholder;
 		if (convertView == null) {
 			viewholder = new ViewHolder();
 			convertView = LayoutInflater.from(mcontext).inflate(R.layout.lv_music_item, null);
@@ -91,6 +90,7 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 			viewholder.singers = (TextView) convertView.findViewById(R.id.singer);
 			viewholder.times = (TextView) convertView.findViewById(R.id.time);
 			viewholder.mIconRemove = (ImageView) convertView.findViewById(R.id.iv_remove);
+			viewholder.mIvLocation = (ImageView) convertView.findViewById(R.id.iv_location);
 			viewholder.song_list_item_menu = (ImageButton) convertView.findViewById(R.id.ibtn_song_list_item_menu);
 
 			convertView.setTag(viewholder);
@@ -103,18 +103,21 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 			viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.mIconRemove.setVisibility(View.GONE);
+			viewholder.mIvLocation.setVisibility(View.GONE);
 		} else {
 			if (currentLongPosition == position) {
 				viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.red));
 				viewholder.mIconRemove.setVisibility(View.VISIBLE);
+				viewholder.mIvLocation.setVisibility(View.VISIBLE);
 			} else {
 				viewholder.mMtvTitle.setTextColor(mcontext.getResources().getColor(R.color.white));
 				viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
 				viewholder.times.setTextColor(mcontext.getResources().getColor(R.color.white));
 				viewholder.times.setVisibility(View.VISIBLE);
 				viewholder.mIconRemove.setVisibility(View.GONE);
+				viewholder.mIvLocation.setVisibility(View.GONE);
 			}
 		}
 		if (currentPosition == position) {
@@ -122,7 +125,7 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 			viewholder.singers.setTextColor(mcontext.getResources().getColor(R.color.white));
 			viewholder.times.setVisibility(View.VISIBLE);
 			viewholder.mIconRemove.setVisibility(View.GONE);
-
+			viewholder.mIvLocation.setVisibility(View.GONE);
 			convertView.setBackgroundColor(mcontext.getResources().getColor(R.color.light_yellow));
 		} else {
 			if (position % 2 == 0) {
@@ -185,6 +188,13 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 			}
 		});
 
+		viewholder.mIvLocation.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mcontext.startActivity(new Intent(mcontext, FileExplorerActivity.class));
+			}
+		});
+
 		return convertView;
 
 	}
@@ -218,7 +228,7 @@ public class MusicListAdapter extends BaseAdapter implements AbsListView.OnScrol
 		public TextView singers;
 		public TextView times;
 		public ImageButton song_list_item_menu;
-		public ImageView mIconRemove;
+		public ImageView mIconRemove, mIvLocation;
 	}
 
 	/**
