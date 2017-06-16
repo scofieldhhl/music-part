@@ -99,12 +99,12 @@ public class MusicService extends Service implements Observer {
 						duration = mp.getDuration();
 						intent.putExtra("currentTime", currentTime);
 						broadCastMusicInfo(intent);
-						if(mPath != null && mPath.startsWith(Contsant.DSD_ISO_HEADER)){
+						/*if(mPath != null && mPath.startsWith(Contsant.DSD_ISO_HEADER)){
 							if(currentTime >= duration && !isIsoComplete){
 								nextOne();
 								isIsoComplete = true;
 							}
-						}
+						}*/
 					}
 					if(handler != null){
 						handler.sendEmptyMessageDelayed(Contsant.PlayStatus.STATE_INFO, 500);
@@ -370,7 +370,7 @@ public class MusicService extends Service implements Observer {
 					playPath(mPath);
 				}
 			}
-			setup();
+
 			if (position != -1) {
 				Intent intent1 = new Intent();
 				intent1.setAction(Contsant.PlayAction.MUSIC_LIST);
@@ -429,12 +429,14 @@ public class MusicService extends Service implements Observer {
 			String strIndex = path.substring(path.length() - 3,path.length());
 			LogTool.d("strIndex:" + strIndex);
 			try{
-				int songIndex = Integer.parseInt(strIndex.trim());
+				int songIndex = Integer.parseInt(strIndex.trim()) - 1;
 				LogTool.d("strIndex:" + songIndex);
 				isoPath = isoPath.substring(0,isoPath.length() - 4);
 				LogTool.d("isoPath:" + isoPath);
 				int flag = IjkMediaPlayer.native_opensacdisofile(isoPath, 0, songIndex);
-				LogTool.d("native_opensacdisofile:" + flag);
+				String pathPlay = "SACD://%s:%d";
+				path = String.format(pathPlay, isoPath, songIndex);
+				LogTool.d("native_opensacdisofile:" + flag + "  ISO Path:" + path);
 			}catch (Exception e){
 				e.printStackTrace();
 			}
@@ -451,7 +453,8 @@ public class MusicService extends Service implements Observer {
 			mp.setDataSource(path);
 			isSetDataSource = true;
 			prePosition = position;
-			LogTool.i("setDataSource" + mPath);
+			setup();
+			LogTool.i("setDataSource" + path);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

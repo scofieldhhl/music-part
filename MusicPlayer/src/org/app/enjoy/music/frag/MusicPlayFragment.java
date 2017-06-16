@@ -9,10 +9,13 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.provider.SyncStateContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
@@ -27,6 +30,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -863,7 +867,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 		if(musicDatas != null && musicDatas.size() > 0){
 			seekbar_change(mPositionSeek);
             mHandler.sendEmptyMessageDelayed(Contsant.Msg.UPDATE_SEEK_BAR, DELAY_CHANGE_PROGRESS);
-//			play();
+			play();
 		}
 	}
 
@@ -871,7 +875,7 @@ public class MusicPlayFragment extends Fragment implements View.OnClickListener,
 	public void onStartTrackingTouch(CircularSeekBar seekBar) {
 		if(musicDatas != null && musicDatas.size() > 0){
 			mPositionSeek = 0;
-//			pause();
+			pause();
 		}
 	}
 
